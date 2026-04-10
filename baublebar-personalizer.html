@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BaubleBar Personalizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- Google Identity & API -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-psd@17/dist/bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+:root{--bg:#1a1a1a;--surface:#242424;--surface2:#2e2e2e;--border:#3a3a3a;--accent:#e8c547;--accent2:#c4a832;--text:#f0ede6;--muted:#888;--success:#5aab6e;--warn:#e8934a;--error:#e85a5a;--info:#5a9ab6;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;}
+.header{background:var(--surface);border-bottom:2px solid var(--accent);padding:14px 24px;display:flex;align-items:center;gap:12px;}
+.header-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--accent);}
+.header-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;}
+.badge{margin-left:auto;background:var(--accent);color:#1a1a1a;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:11px;padding:3px 9px;border-radius:2px;}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);}
+.tab{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;padding:10px 20px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-content{display:none;height:calc(100vh - 94px);}
+.tab-content.active{display:flex;}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);width:300px;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;}
+.section{padding:14px;border-bottom:1px solid var(--border);}
+.sec-label{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.step{background:var(--accent);color:#1a1a1a;font-size:9px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;flex-shrink:0;}
+.drop-zone{border:1px dashed var(--border);border-radius:3px;padding:10px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:rgba(232,197,71,.05);}
+.drop-zone input{display:none;}
+.dz-icon{font-size:18px;margin-bottom:3px;}
+.dz-text{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.dz-hint{font-size:9px;color:var(--success);margin-top:2px;}
+.cached-bar{display:flex;align-items:center;justify-content:space-between;background:rgba(90,171,110,.1);border:1px solid rgba(90,171,110,.3);border-radius:3px;padding:5px 9px;margin-top:6px;font-family:'DM Mono',monospace;font-size:10px;color:var(--success);}
+.clear-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;padding:2px 6px;border-radius:2px;cursor:pointer;transition:all .2s;}
+.clear-btn:hover{border-color:var(--error);color:var(--error);}
+.file-pills{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;}
+.pill{background:var(--surface2);border:1px solid var(--border);border-radius:2px;padding:2px 6px;font-family:'DM Mono',monospace;font-size:9px;display:flex;align-items:center;gap:3px;}
+.pdot{width:4px;height:4px;border-radius:50%;}
+.pdot.ok{background:var(--success);}
+.pdot.warn{background:var(--warn);}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.stat{background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:7px;text-align:center;}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:24px;line-height:1;}
+.stat-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
+.process-btn{margin:14px;padding:12px;background:var(--accent);color:#1a1a1a;border:none;border-radius:3px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;width:calc(100% - 28px);transition:all .2s;}
+.process-btn:hover:not(:disabled){background:var(--accent2);}
+.process-btn:disabled{opacity:.4;cursor:not-allowed;}
+.dl-btn{display:block;margin:0 14px 12px;padding:10px;background:var(--success);color:#fff;border:none;border-radius:3px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;cursor:pointer;text-align:center;text-decoration:none;}
+.prog-wrap{margin:0 14px 12px;display:none;}
+.prog-bg{background:var(--surface2);border:1px solid var(--border);border-radius:2px;height:4px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--accent);width:0%;transition:width .3s;border-radius:2px;}
+.prog-text{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:4px;}
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.table-wrap{flex:1;overflow-y:auto;padding:16px 20px;}
+.table-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.table-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;}
+.table-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:2px solid var(--accent);}
+th{font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1.5px;color:var(--accent);padding:6px 9px;text-align:left;font-weight:400;}
+td{padding:6px 9px;font-family:'DM Mono',monospace;font-size:10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.sbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:2px;font-size:9px;font-family:'DM Mono',monospace;}
+.sbadge.pending{background:rgba(136,136,136,.15);color:var(--muted);}
+.sbadge.created{background:rgba(90,171,110,.15);color:var(--success);}
+.sbadge.skipped{background:rgba(232,147,74,.15);color:var(--warn);}
+.sbadge.error{background:rgba(232,90,90,.15);color:var(--error);}
+.sbadge.processing{background:rgba(232,197,71,.15);color:var(--accent);}
+.sdot{width:4px;height:4px;border-radius:50%;background:currentColor;}
+.log{background:var(--surface);border-top:1px solid var(--border);height:110px;overflow-y:auto;padding:8px 20px;}
+.log-entry{font-family:'DM Mono',monospace;font-size:9px;padding:2px 0;display:flex;gap:8px;}
+.log-time{color:var(--muted);flex-shrink:0;}
+.log-msg.ok{color:var(--success);}
+.log-msg.warn{color:var(--warn);}
+.log-msg.err{color:var(--error);}
+.log-msg.info{color:var(--text);}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:220px;color:var(--muted);gap:8px;}
+.empty .ei{font-size:36px;opacity:.25;}
+.empty .et{font-family:'DM Mono',monospace;font-size:11px;}
+/* Calibration Tab */
+.cal-wrap{flex:1;padding:24px;overflow-y:auto;max-width:700px;}
+.cal-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent);margin-bottom:6px;}
+.cal-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);line-height:1.7;margin-bottom:20px;}
+.cal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.cal-drop{border:1px dashed var(--border);border-radius:3px;padding:20px;text-align:center;cursor:pointer;background:var(--surface2);transition:all .2s;}
+.cal-drop:hover,.cal-drop.dragover{border-color:var(--accent);background:rgba(232,197,71,.05);}
+.cal-drop input{display:none;}
+.cal-drop .cd-icon{font-size:28px;margin-bottom:6px;}
+.cal-drop .cd-label{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:var(--accent);}
+.cal-drop .cd-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;}
+.cal-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
+.field-group label{display:block;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;}
+.field-group input,.field-group select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:2px;padding:6px 8px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;}
+.field-group input:focus,.field-group select:focus{outline:none;border-color:var(--accent);}
+.cal-btn{padding:10px 24px;background:var(--accent);color:#1a1a1a;border:none;border-radius:3px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;cursor:pointer;margin-right:8px;}
+.cal-btn:disabled{opacity:.4;cursor:not-allowed;}
+.cal-result{background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:14px;margin-top:16px;display:none;}
+.cal-result-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:var(--accent);margin-bottom:8px;}
+.cal-code{font-family:'DM Mono',monospace;font-size:10px;line-height:1.8;white-space:pre-wrap;color:var(--text);}
+.copy-btn{float:right;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:2px;cursor:pointer;}
+/* ── Auth Overlay ── */
+#authOverlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+#authOverlay.hidden{display:none;}
+.auth-logo{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:var(--accent);}
+.auth-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:32px 40px;display:flex;flex-direction:column;align-items:center;gap:16px;max-width:360px;width:90%;}
+.auth-status{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-align:center;min-height:16px;}
+.auth-status.err{color:var(--error);}
+.auth-status.ok{color:var(--success);}
+.auth-user{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:8px 12px;width:100%;}
+.auth-avatar{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);}
+.auth-name{font-family:'DM Mono',monospace;font-size:10px;}
+.signout-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:2px;cursor:pointer;margin-left:auto;}
+.signout-btn:hover{border-color:var(--error);color:var(--error);}
+/* Drive Sync */
+.drive-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(90,171,110,.07);border-bottom:1px solid var(--border);}
+.drive-status{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);flex:1;}
+.sync-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:9px;padding:4px 10px;border-radius:2px;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.sync-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.sync-btn:disabled{opacity:.4;cursor:not-allowed;}
+.user-chip{display:flex;align-items:center;gap:6px;margin-left:auto;}
+.user-chip img{width:18px;height:18px;border-radius:50%;}
+.user-chip span{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);}
+/* Setup banner */
+.setup-banner{background:rgba(232,147,74,.1);border:1px solid rgba(232,147,74,.4);border-radius:3px;padding:10px 14px;margin:10px 14px;font-family:'DM Mono',monospace;font-size:9px;color:var(--warn);line-height:1.7;display:none;}
+.setup-banner.visible{display:block;}
+
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.spinner{display:inline-block;width:7px;height:7px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;margin-right:3px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<!-- Auth Overlay -->
+<div id="authOverlay">
+  <div class="auth-logo">BaubleBar Personalizer</div>
+  <div class="auth-sub">SIGN IN TO CONTINUE</div>
+  <div class="auth-card">
+    <div id="authStatus" class="auth-status">Loading Google Sign-In…</div>
+    <div id="googleSignInBtn"></div>
+    <div id="authUserChip" style="display:none;width:100%;flex-direction:column;gap:8px">
+      <div class="auth-user">
+        <img id="authAvatar" class="auth-avatar" src="">
+        <div class="auth-name" id="authNameLabel"></div>
+        <button class="signout-btn" onclick="signOut()">SIGN OUT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="header">
+  <div><div class="header-title">BaubleBar Personalizer</div><div class="header-sub">Blanket · Batch TIF Generator</div></div>
+  <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+    <div id="headerUserChip" class="user-chip" style="display:none">
+      <img id="headerAvatar" src=""><span id="headerName"></span>
+      <button class="signout-btn" onclick="signOut()">SIGN OUT</button>
+    </div>
+    <div class="badge" id="sizeBadge">KIDS</div>
+  </div>
+</div>
+
+<!-- Drive Sync Bar -->
+<div class="drive-bar" id="driveBar">
+  <span style="font-size:12px">☁</span>
+  <span class="drive-status" id="driveStatusText">Assets: loading from cache…</span>
+  <button class="sync-btn" id="syncBtn" onclick="syncFromDrive()" disabled>⟳ SYNC FROM DRIVE</button>
+</div>
+
+<div class="setup-banner" id="setupBanner">
+  ⚠ SETUP REQUIRED — Open this file and fill in GOOGLE_CONFIG at the top of the &lt;script&gt; block:<br>
+  • CLIENT_ID — from Google Cloud Console → APIs &amp; Services → Credentials<br>
+  • WHITELIST_SHEET — the Google Sheet ID containing approved emails (one per row, column A)<br>
+  • ASSETS_FOLDER — the shared Google Drive folder ID containing your PSDs/BMPs/fonts
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('process')">PROCESS ORDERS</div>
+  <div class="tab" onclick="switchTab('calibrate')">ADD NEW TEMPLATE</div>
+</div>
+
+<!-- ── PROCESS TAB ── -->
+<div class="tab-content active" id="tab-process">
+  <div class="sidebar">
+    <div class="section">
+      <div class="sec-label"><span style="display:flex;align-items:center;gap:6px"><span class="step">1</span>ORDER SPREADSHEET</span></div>
+      <div class="drop-zone" id="xlsxDrop" onclick="document.getElementById('xlsxInput').click()">
+        <input type="file" id="xlsxInput" accept=".xlsx,.xls" onchange="handleXlsx(this.files[0])">
+        <div class="dz-icon">📊</div><div class="dz-text">Drop spreadsheet here</div><div class="dz-hint">Upload fresh each run</div>
+      </div>
+      <div id="xlsxPills" class="file-pills"></div>
+    </div>
+    <div class="section">
+      <div class="sec-label"><span style="display:flex;align-items:center;gap:6px"><span class="step">2</span>TEMPLATES &amp; FONTS</span><button class="clear-btn" onclick="clearCache()">CLEAR</button></div>
+      <div class="drop-zone" id="folderDrop" onclick="document.getElementById('folderInput').click()">
+        <input type="file" id="folderInput" multiple accept=".psd,.bmp,.ttf,.otf,.TTF,.OTF" onchange="handleFolder(this.files)">
+        <div class="dz-icon">📁</div><div class="dz-text">Select PSDs / BMPs + fonts</div><div class="dz-hint">✓ Remembered between sessions</div>
+      </div>
+      <div style="margin-top:6px;text-align:center">
+        <span style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted)">or drop entire folder → </span>
+        <label style="font-family:DM Mono,monospace;font-size:9px;color:var(--accent);cursor:pointer;text-decoration:underline">
+          Browse Folder<input type="file" id="folderDirInput" multiple webkitdirectory style="display:none" onchange="handleFolder(this.files)">
+        </label>
+      </div>
+      <div id="cachedBar" style="display:none" class="cached-bar"><span>✓ CACHED — <span id="cachedCount">0 templates, 0 fonts</span></span></div>
+      <div id="filePills" class="file-pills"></div>
+    </div>
+    <div class="section">
+      <div class="sec-label">Summary</div>
+      <div class="stats">
+        <div class="stat"><div class="stat-val" id="statTotal">0</div><div class="stat-label">TOTAL ORDERS</div></div>
+        <div class="stat"><div class="stat-val" id="statReady">0</div><div class="stat-label">READY</div></div>
+        <div class="stat"><div class="stat-val" id="statCreated" style="color:var(--success)">0</div><div class="stat-label">CREATED</div></div>
+        <div class="stat"><div class="stat-val" id="statSkipped" style="color:var(--warn)">0</div><div class="stat-label">SKIPPED</div></div>
+      </div>
+    </div>
+    <button class="process-btn" id="processBtn" onclick="processAll()" disabled>PROCESS ALL ORDERS</button>
+    <div class="prog-wrap" id="progWrap"><div class="prog-bg"><div class="prog-fill" id="progFill"></div></div><div class="prog-text" id="progText">Processing...</div></div>
+  </div>
+  <div class="content">
+    <div class="table-wrap">
+      <div class="table-hdr"><div class="table-title">Order Queue</div><div class="table-meta" id="tableMeta">No orders loaded</div></div>
+      <div id="tableContainer"><div class="empty"><div class="ei">📋</div><div class="et">Upload spreadsheet to see orders</div></div></div>
+    </div>
+    <div class="log" id="logPanel">
+      <div class="log-entry"><span class="log-time">--:--:--</span><span class="log-msg info">System ready. PSDs and fonts are remembered between sessions.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CALIBRATE TAB ── -->
+<div class="tab-content" id="tab-calibrate">
+  <div class="cal-wrap">
+    <div class="cal-title">Add New Template</div>
+    <div class="cal-sub">
+      To add a new template style without needing help:<br>
+      1. Save the PSD with the text layer HIDDEN (blank template)<br>
+      2. Save a second PSD/TIF with a sample name filled in (finished example)<br>
+      3. Drop both files below + enter the style name and font<br>
+      4. Click Calibrate — the tool detects the zones automatically<br>
+      5. Copy the generated config and send it to your developer to add to the tool
+    </div>
+    <div class="cal-grid">
+      <div class="cal-drop" id="calBlankDrop" onclick="document.getElementById('calBlankInput').click()">
+        <input type="file" id="calBlankInput" accept=".psd,.bmp,.tif,.tiff" onchange="calLoadBlank(this.files[0])">
+        <div class="cd-icon">⬜</div>
+        <div class="cd-label">Blank Template</div>
+        <div class="cd-sub" id="calBlankName">PSD or BMP with text layer hidden</div>
+      </div>
+      <div class="cal-drop" id="calFinishedDrop" onclick="document.getElementById('calFinishedInput').click()">
+        <input type="file" id="calFinishedInput" accept=".psd,.tif,.tiff" onchange="calLoadFinished(this.files[0])">
+        <div class="cd-icon">✅</div>
+        <div class="cd-label">Finished Example</div>
+        <div class="cd-sub" id="calFinishedName">PSD or TIF with sample name</div>
+      </div>
+    </div>
+    <div class="cal-fields">
+      <div class="field-group"><label>Style Name (must match spreadsheet)</label><input type="text" id="calStyleName" placeholder="e.g. Spell It Out"></div>
+      <div class="field-group"><label>Sample Name Used</label><input type="text" id="calSampleName" placeholder="e.g. REESE"></div>
+      <div class="field-group"><label>Font Filename</label><input type="text" id="calFontFile" placeholder="e.g. DEALERPLATE CALIFORNIA.TTF"></div>
+    </div>
+    <button class="cal-btn" id="calBtn" onclick="runCalibration()" disabled>CALIBRATE</button>
+    <div class="cal-result" id="calResult">
+      <button class="copy-btn" onclick="copyCalResult()">COPY</button>
+      <div class="cal-result-title">Generated Configuration</div>
+      <div class="cal-code" id="calCode"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// GOOGLE CONFIG — Fill these in after setup (see SETUP GUIDE in README section)
+// ─────────────────────────────────────────────────────────────────────────────
+const GOOGLE_CONFIG = {
+  CLIENT_ID:       '70048819950-0dp69iq6277cnrhffo0b1ffgr53bdk7h.apps.googleusercontent.com', // From Google Cloud Console
+  WHITELIST_SHEET: '1CvUfLAUf-CvaVCK3MOol9tiKw7NDoIl62btyT_VxlSY',   // ID from the whitelist Google Sheet URL
+  ASSETS_FOLDER:   'https://drive.google.com/drive/folders/1jJWWkqsbxsMnnOIi2SfCWkECrTUvWck9',  // ID from the shared Drive folder URL
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TEMPLATE MAP — all 7 Kids templates, calibrated from Photoshop analysis
+// ─────────────────────────────────────────────────────────────────────────────
+const TEMPLATE_MAP = {
+  'Spell It Out':{
+    psd:'Spell_It_Out_Kids_blank.bmp',
+    palette:[[203,203,203],[255,255,255]],
+    zones:[{font:'DEALERPLATE_CALIFORNIA.TTF',cx:164,cy:195,w:246,h:84,angle:0,color:[203,203,203,255],mode:'fit'}]
+  },
+  'Down The Line':{
+    psd:'down_the_line_kids.Bmp',
+    palette:[[0,0,0],[155,155,155],[208,208,208],[255,255,255]],
+    zones:[{font:'SORIA-BOLD.OTF',cx:131,cy:179,w:330,h:72,angle:-90,color:[0,0,0,255],mode:'right',rightEdge:164}]
+  },
+  'Subtly Scalloped':{
+    psd:'Subtly_Scalloped_Kids_blank.bmp',
+    palette:[[255,255,255],[207,207,207],[115,115,115],[0,0,0]],
+    zones:[{font:'ETERNATE_BOLD.OTF',cx:159,cy:180,w:267,h:108,hCrop:160,angle:0,color:[0,0,0,255],mode:'midbody'}]
+  },
+  'Wild at Heart':{
+    psd:'WILD_AT_HEART_KIDS_2_COLOR.bmp',
+    palette:[[45,45,45],[128,128,128],[192,192,192],[255,255,255]],
+    zones:[{font:'TREBUCBD.TTF',cx:161,cy:171,w:157,h:27,angle:0,color:[45,45,45,255],mode:'fit',uppercase:true}]
+  },
+  'Wild Child':{
+    psd:'Wild_Child_KIDS_blank.bmp',
+    palette:[[0,0,0],[118,116,115],[194,195,195],[255,255,255]],
+    zones:[
+      {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:170,cy:64, w:135,h:23,angle:-38.5,color:[194,195,195,255],mode:'diag',uppercase:true,forceMin:16},
+      {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:138,cy:233,w:135,h:26,angle:56.2, color:[194,195,195,255],mode:'diag',uppercase:true,forceMin:16,flip:true},
+      {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:246,cy:165,w:135,h:24,angle:29.6, color:[0,0,0,255],      mode:'diag',uppercase:true,forceMin:16},
+      {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:153,cy:324,w:134,h:22,angle:-8.0, color:[0,0,0,255],      mode:'diag',uppercase:true,forceMin:16}
+    ]
+  },
+  'Play Date':{
+    psd:'Play_Date_KIDS_blank.bmp',
+    palette:[[0,0,0],[139,139,138],[189,190,190],[255,255,255]],
+    zones:[
+      {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:160,cy:58, w:82,h:24,angle:-33.4,color:[189,190,190,255],mode:'diag',uppercase:true,forceSize:24},
+      {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:245,cy:158,w:82,h:24,angle:33.4, color:[139,139,138,255],mode:'diag',uppercase:true,forceSize:24},
+      {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:108,cy:204,w:81,h:31,angle:60.8, color:[189,190,190,255],mode:'diag',uppercase:true,forceSize:24,flip:true},
+      {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:149,cy:324,w:82,h:22,angle:-9.4, color:[139,139,138,255],mode:'diag',uppercase:true,forceSize:24}
+    ]
+  },
+  'Sweet Tooth':{
+    psd:'SweetTooth_KIDS_blank.bmp',
+    palette:[[0,0,0],[137,136,135],[199,198,199],[255,255,255]],
+    zones:[
+      {font:'KEEPONTRUCKIN.TTF',cx:233,cy:60, w:160,h:24,angle:30.0, color:[137,136,135,255],mode:'diag',uppercase:true},
+      {font:'KEEPONTRUCKIN.TTF',cx:92, cy:169,w:161,h:25,angle:-25.8,color:[0,0,0,255],      mode:'diag',uppercase:true},
+      {font:'KEEPONTRUCKIN.TTF',cx:216,cy:300,w:160,h:24,angle:16.1, color:[137,136,135,255],mode:'diag',uppercase:true}
+    ]
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IndexedDB
+// ─────────────────────────────────────────────────────────────────────────────
+const DB_NAME='BaubleBarV4',DB_VER=1;
+let db=null;
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('files'))d.createObjectStore('files',{keyPath:'name'});};r.onsuccess=e=>{db=e.target.result;res(db);};r.onerror=e=>rej(e.target.error);});}
+function dbPut(obj){return new Promise((res,rej)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').put(obj).onsuccess=()=>res();});}
+function dbGetAll(){return new Promise((res,rej)=>{const tx=db.transaction('files','readonly');tx.objectStore('files').getAll().onsuccess=e=>res(e.target.result);});}
+function dbClearAll(){return new Promise((res,rej)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').clear().onsuccess=()=>res();});}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────────────────────
+let orders=[],psdFiles={},fontFaces={},results=[];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tabs
+// ─────────────────────────────────────────────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',['process','calibrate'][i]===name);});
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Logging
+// ─────────────────────────────────────────────────────────────────────────────
+function log(msg,type='info'){
+  const p=document.getElementById('logPanel');
+  const t=new Date().toTimeString().slice(0,8);
+  const el=document.createElement('div');
+  el.className='log-entry';
+  el.innerHTML=`<span class="log-time">${t}</span><span class="log-msg ${type}">${msg}</span>`;
+  p.appendChild(el);p.scrollTop=p.scrollHeight;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Drag and Drop
+// ─────────────────────────────────────────────────────────────────────────────
+['xlsxDrop','folderDrop','calBlankDrop','calFinishedDrop'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('dragover');});
+  el.addEventListener('dragleave',()=>el.classList.remove('dragover'));
+  el.addEventListener('drop',e=>{
+    e.preventDefault();el.classList.remove('dragover');
+    const f=e.dataTransfer.files;
+    if(id==='xlsxDrop')handleXlsx(f[0]);
+    else if(id==='folderDrop')handleFolder(f);
+    else if(id==='calBlankDrop')calLoadBlank(f[0]);
+    else calLoadFinished(f[0]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Spreadsheet
+// ─────────────────────────────────────────────────────────────────────────────
+function handleXlsx(file){
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets['Orders']||wb.Sheets['Sheet1']||wb.Sheets[wb.SheetNames[0]];
+      if(!ws){log('No valid sheet found','err');return;}
+      const data=XLSX.utils.sheet_to_json(ws);
+      orders=data.filter(r=>{
+          const sz=(r['Correct Size']||'').toString().toLowerCase();
+          return sz.includes('kids')||sz.includes('throw');
+        })
+        .map(r=>({
+          orderNum:(r['Customer Order Number']||'').toString().trim(),
+          name:(r['Customization']||'').toString().trim(),
+          style:(r['Style']||'').toString().trim(),
+          size:(r['Correct Size']||'').toString().trim(),
+        }));
+      document.getElementById('xlsxPills').innerHTML=
+        `<div class="pill"><span class="pdot ok"></span>${file.name} — ${orders.length} orders</div>`;
+      window.spreadsheetBaseName=file.name.replace(/\.[^.]+$/,'');
+      log(`Loaded ${orders.length} orders from ${file.name}`,'ok');
+      renderTable();updateStats();checkReady();
+    }catch(err){log(`Spreadsheet error: ${err.message}`,'err');}
+  };
+  r.readAsArrayBuffer(file);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Files — PSDs + Fonts
+// ─────────────────────────────────────────────────────────────────────────────
+async function handleFolder(files){
+  let p=0,f=0;
+  for(const file of Array.from(files)){
+    const ext=file.name.split('.').pop().toLowerCase();
+    const buf=await file.arrayBuffer();
+    if(ext==='psd'||ext==='bmp'){const nk=file.name.toLowerCase().replace(/\s+/g,'_');psdFiles[nk]=buf;await dbPut({name:nk,type:'psd',data:buf});p++;}
+    else if(['ttf','otf'].includes(ext)){const nk=file.name.replace(/\s+/g,'_');await registerFont(nk,buf);await dbPut({name:nk,type:'font',data:buf});f++;}
+  }
+  log(`Loaded ${p} template${p!==1?'s':''} and ${f} font${f!==1?'s':''} — cached for next session`,'ok');
+  renderFileStatus();checkReady();
+}
+
+async function registerFont(name,buffer){
+  const fn='bb_'+name.replace(/[^a-zA-Z0-9]/g,'_');
+  try{const face=new FontFace(fn,buffer);await face.load();document.fonts.add(face);fontFaces[name]=fn;}
+  catch(e){log(`Font error ${name}: ${e.message}`,'err');}
+}
+
+async function loadCache(){
+  const items=await dbGetAll();
+  let p=0,f=0;
+  for(const item of items){
+    if(item.type==='psd'){psdFiles[item.name.toLowerCase().replace(/\s+/g,'_')]=item.data;p++;}
+    else if(item.type==='font'){await registerFont(item.name.replace(/\s+/g,'_'),item.data);f++;}
+  }
+  if(p+f>0){log(`Restored from cache: ${p} PSD${p!==1?'s':''}, ${f} font${f!==1?'s':''}`,'ok');renderFileStatus();}
+}
+
+async function clearCache(){
+  await dbClearAll();psdFiles={};fontFaces={};renderFileStatus();log('Cache cleared','warn');checkReady();
+}
+
+function renderFileStatus(){
+  const pn=Object.keys(psdFiles),fn=Object.keys(fontFaces);
+  const bar=document.getElementById('cachedBar');
+  if(pn.length+fn.length>0){bar.style.display='flex';document.getElementById('cachedCount').textContent=`${pn.length} template${pn.length!==1?'s':''}, ${fn.length} font${fn.length!==1?'s':''}`;}
+  else bar.style.display='none';
+  const allFonts=Object.values(TEMPLATE_MAP).flatMap(t=>t.zones.map(z=>z.font));
+  document.getElementById('filePills').innerHTML=[
+    ...pn.map(n=>{const m=Object.values(TEMPLATE_MAP).some(t=>t.psd.toLowerCase().replace(/\s+/g,'_')===n.toLowerCase().replace(/\s+/g,'_'));return`<div class="pill"><span class="pdot ${m?'ok':'warn'}"></span>${n}</div>`;}),
+    ...fn.map(n=>{const m=allFonts.includes(n);return`<div class="pill"><span class="pdot ${m?'ok':'warn'}"></span>${n}</div>`;})
+  ].join('');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Table
+// ─────────────────────────────────────────────────────────────────────────────
+function renderTable(){
+  if(!orders.length)return;
+      document.getElementById('tableMeta').textContent=`${orders.length} orders`;
+  document.getElementById('tableContainer').innerHTML=`
+    <table><thead><tr><th>Order #</th><th>Name</th><th>Style</th><th>Size</th><th>Status</th><th>Note</th></tr></thead>
+    <tbody>${orders.map((o,i)=>`<tr><td>${o.orderNum}</td><td>${o.name}</td><td>${o.style}</td>
+      <td><span style="font-size:9px;color:var(--muted)">${o.size}</span></td>
+      <td><span class="sbadge pending" id="st_${i}"><span class="sdot"></span>PENDING</span></td>
+      <td style="font-size:9px;color:var(--muted)" id="note_${i}"></td></tr>`).join('')}</tbody></table>`;
+}
+
+function setRow(i,s,n=''){
+  const el=document.getElementById(`st_${i}`);const ne=document.getElementById(`note_${i}`);
+  if(!el)return;
+  const L={pending:'PENDING',created:'CREATED',skipped:'SKIPPED',error:'ERROR',processing:'PROCESSING'};
+  el.className=`sbadge ${s}`;
+  el.innerHTML=s==='processing'?`<span class="spinner"></span>PROCESSING`:`<span class="sdot"></span>${L[s]||s.toUpperCase()}`;
+  if(ne)ne.textContent=n;
+}
+
+function updateStats(){
+  document.getElementById('statTotal').textContent=orders.length;
+  document.getElementById('statReady').textContent=orders.filter(o=>TEMPLATE_MAP[o.style]).length;
+  document.getElementById('statCreated').textContent=results.filter(r=>r.status==='created').length;
+  document.getElementById('statSkipped').textContent=results.filter(r=>r.status==='skipped').length;
+}
+
+function checkReady(){
+  document.getElementById('processBtn').disabled=!(orders.length>0&&Object.keys(psdFiles).length>0&&Object.keys(fontFaces).length>0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Template → Canvas (supports PSD and BMP)
+// ─────────────────────────────────────────────────────────────────────────────
+async function psdToCanvas(buffer,filename){
+  // If BMP (or any non-PSD): load via blob URL onto an Image, draw to canvas
+  const ext=(filename||'').split('.').pop().toLowerCase();
+  if(ext==='bmp'||ext==='png'||ext==='jpg'||ext==='jpeg'){
+    return new Promise((resolve,reject)=>{
+      const blob=new Blob([buffer],{type:'image/'+( ext==='jpg'?'jpeg':ext )});
+      const url=URL.createObjectURL(blob);
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        canvas.width=img.width;canvas.height=img.height;
+        canvas.getContext('2d').drawImage(img,0,0);
+        URL.revokeObjectURL(url);
+        resolve(canvas);
+      };
+      img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Failed to load BMP: '+filename));};
+      img.src=url;
+    });
+  }
+  // PSD fallback
+  const psd=agPsd.readPsd(buffer,{skipCompositeImageData:false,skipLayerImageData:false});
+  const canvas=document.createElement('canvas');
+  canvas.width=psd.width;canvas.height=psd.height;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,psd.width,psd.height);
+  if(psd.canvas){ctx.drawImage(psd.canvas,0,0);}
+  else if(psd.children){
+    for(const l of psd.children){
+      if(l.hidden||l.text||!l.canvas)continue;
+      ctx.globalAlpha=l.opacity!==undefined?l.opacity/255:1;
+      ctx.drawImage(l.canvas,l.left||0,l.top||0);
+      ctx.globalAlpha=1;
+    }
+  }
+  return canvas;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Font sizing — per zone mode
+// ─────────────────────────────────────────────────────────────────────────────
+function getFontSize(display,faceName,zone){
+  if(zone.forceSize) return zone.forceSize;
+  const tmp=document.createElement('canvas');tmp.width=3000;tmp.height=400;
+  const ctx=tmp.getContext('2d');
+  const w=zone.w,h=zone.h,angle=zone.angle,mode=zone.mode;
+  let aw,ah;
+  if(mode==='fit'){aw=w*0.93;ah=h*0.93;}
+  else if(mode==='height'){aw=99999;ah=h*(zone.hm||0.45);}
+  else if(mode==='width'){aw=w*(zone.wm||0.90);ah=99999;}
+  else if(mode==='diag'){const l=Math.max(w,h);const s=Math.min(w,h);aw=l*0.90;ah=s*0.90;}
+  else{aw=w*0.93;ah=h*0.93;}
+  for(let sz=300;sz>=6;sz--){
+    ctx.font=`${sz}px "${faceName}"`;
+    const tw=ctx.measureText(display).width;
+    const th=sz*0.85;
+    if(tw<=aw&&th<=ah){
+      if(zone.forceMin&&sz<zone.forceMin)return zone.forceMin;
+      return sz;
+    }
+  }
+  return zone.forceMin||6;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Render text — 8x scale + threshold + NEAREST = zero stray pixels
+// ─────────────────────────────────────────────────────────────────────────────
+function renderTextZone(mainCanvas,display,zone,faceName){
+  // Optical mode: center vertically on neutral letters (no ascenders/descenders)
+  if(zone.mode==='optical'&&zone.neutralLetters){
+    const fontSize=getFontSize(display,faceName,zone);
+    const tmp=document.createElement('canvas');tmp.width=3000;tmp.height=400;
+    const ctx=tmp.getContext('2d');
+    ctx.font=`${fontSize}px "${faceName}"`;
+    const neutralChars=[...display.toUpperCase()].filter(c=>zone.neutralLetters.includes(c));
+    const letters=neutralChars.length>0?neutralChars:[...display.toUpperCase()];
+    let minTop=Infinity,maxBot=-Infinity;
+    for(const ch of letters){
+      const m=ctx.measureText(ch);
+      const top=-(m.actualBoundingBoxAscent||fontSize*0.75);
+      const bot=(m.actualBoundingBoxDescent||fontSize*0.25);
+      if(top<minTop)minTop=top;
+      if(bot>maxBot)maxBot=bot;
+    }
+    const nc=(minTop+maxBot)/2;
+    zone=Object.assign({},zone,{cy:zone.cy-nc});
+  }
+  // Mid-body centering mode: pixel-scan based, font-metric-agnostic (for ETERNATE)
+  if(zone.mode==='midbody'){
+    const SCALE=8;
+    const[r,g,b]=zone.color;
+    const cx=zone.cx,cyTarget=zone.cy,w=zone.w,h=zone.h;
+    const hCrop=zone.hCrop||h;
+    const fontSize=getFontSize(display,faceName,zone);
+
+    // Render at 8x onto a tall canvas
+    const rw=w*SCALE, rh=h*SCALE*3;
+    const off=document.createElement('canvas');off.width=rw;off.height=rh;
+    const octx=off.getContext('2d');
+    octx.fillStyle='#ffffff';octx.fillRect(0,0,rw,rh);
+    octx.font=`${fontSize*SCALE}px "${faceName}"`;
+    octx.fillStyle=`rgb(${r},${g},${b})`;
+    octx.textBaseline='top';
+    const tw=octx.measureText(display).width;
+    const tx=(rw-tw)/2;
+    const ty=rh/3;
+    octx.fillText(display,tx,ty);
+
+    // Hard threshold → binary
+    const id=octx.getImageData(0,0,rw,rh);
+    const px=id.data;
+    for(let i=0;i<px.length;i+=4){
+      const dr=px[i]-r,dg=px[i+1]-g,db=px[i+2]-b;
+      const dw=px[i]-255,dg2=px[i+1]-255,db2=px[i+2]-255;
+      if(dr*dr+dg*dg+db*db<dw*dw+dg2*dg2+db2*db2){px[i]=r;px[i+1]=g;px[i+2]=b;px[i+3]=255;}
+      else{px[i]=255;px[i+1]=255;px[i+2]=255;px[i+3]=0;}
+    }
+
+    // Count ink pixels per row
+    const rowCounts=new Int32Array(rh);
+    for(let y=0;y<rh;y++){
+      let cnt=0;
+      for(let x=0;x<rw;x++){if(px[(y*rw+x)*4+3]>0)cnt++;}
+      rowCounts[y]=cnt;
+    }
+    // Find max row count
+    let maxCount=0;
+    for(let y=0;y<rh;y++){if(rowCounts[y]>maxCount)maxCount=rowCounts[y];}
+    // Find dense body rows (>40% of max) — these are the actual letter bodies
+    const thresh=maxCount*0.40;
+    let denseTop=-1,denseBot=-1;
+    for(let y=0;y<rh;y++){if(rowCounts[y]>thresh){if(denseTop<0)denseTop=y;denseBot=y;}}
+    if(denseTop<0){denseTop=0;denseBot=rh-1;}
+    const bodyCenter=(denseTop+denseBot)/2;
+    const offsetY=Math.round(cyTarget*SCALE-bodyCenter);
+
+    // Shift pixel data by offsetY
+    const shifted=new Uint8ClampedArray(px.length);
+    shifted.fill(255);
+    if(offsetY>=0){
+      const srcLen=(rh-offsetY)*rw*4;
+      shifted.set(px.subarray(0,srcLen),offsetY*rw*4);
+    } else {
+      const srcOff=(-offsetY)*rw*4;
+      const srcLen=(rh+offsetY)*rw*4;
+      if(srcLen>0) shifted.set(px.subarray(srcOff,srcOff+srcLen),0);
+    }
+
+    // Crop to hCrop zone centered at cyTarget
+    const halfH=Math.floor(hCrop*SCALE/2);
+    const cropTop=cyTarget*SCALE-halfH;
+    const cropBot=cropTop+hCrop*SCALE;
+    const cropCanvas=document.createElement('canvas');cropCanvas.width=rw;cropCanvas.height=hCrop*SCALE;
+    const cctx=cropCanvas.getContext('2d');
+    const cropId=cctx.createImageData(rw,hCrop*SCALE);
+    cropId.data.set(shifted.subarray(cropTop*rw*4,cropBot*rw*4));
+    cctx.putImageData(cropId,0,0);
+
+    // Downscale NEAREST to w x hCrop
+    const small=document.createElement('canvas');small.width=w;small.height=hCrop;
+    const sctx=small.getContext('2d');
+    sctx.imageSmoothingEnabled=false;
+    sctx.drawImage(cropCanvas,0,0,w,hCrop);
+
+    // Composite onto main canvas
+    const mainCtx=mainCanvas.getContext('2d');
+    mainCtx.imageSmoothingEnabled=false;
+    mainCtx.drawImage(small,Math.round(cx-w/2),Math.round(cyTarget-hCrop/2));
+    return;
+  }
+
+  const SCALE=8;
+  const[r,g,b,a]=zone.color;
+  // Apply uppercase if zone requests it
+  if(zone.uppercase) display=display.toUpperCase();
+  const fontSize=getFontSize(display,faceName,zone);
+
+  // Measure at 8x
+  const meas=document.createElement('canvas');meas.width=6000;meas.height=1000;
+  const mctx=meas.getContext('2d');
+  mctx.font=`${fontSize*SCALE}px "${faceName}"`;
+  const tw=Math.ceil(mctx.measureText(display).width);
+  const th=Math.ceil(fontSize*SCALE*1.2);
+  const pad=SCALE*8;
+
+  // Render at 8x
+  const off=document.createElement('canvas');off.width=tw+pad*2;off.height=th+pad*2;
+  const octx=off.getContext('2d');
+  octx.fillStyle='#ffffff';octx.fillRect(0,0,off.width,off.height);
+  octx.font=`${fontSize*SCALE}px "${faceName}"`;
+  octx.fillStyle=`rgb(${r},${g},${b})`;
+  octx.textBaseline='top';
+  octx.textAlign='left';
+  octx.fillText(display,pad,pad);
+
+  // Threshold — snap to text color or white
+  const id=octx.getImageData(0,0,off.width,off.height);
+  const data=id.data;
+  for(let i=0;i<data.length;i+=4){
+    const dr=data[i]-r,dg=data[i+1]-g,db=data[i+2]-b;
+    const dw=data[i]-255,dg2=data[i+1]-255,db2=data[i+2]-255;
+    if(dr*dr+dg*dg+db*db<dw*dw+dg2*dg2+db2*db2){data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=255;}
+    else{data[i]=255;data[i+1]=255;data[i+2]=255;data[i+3]=0;}
+  }
+  octx.putImageData(id,0,0);
+
+  // Flip at 8x if requested
+  let off8=off;
+  if(zone.flip){
+    const fl=document.createElement('canvas');fl.width=off.width;fl.height=off.height;
+    const fc=fl.getContext('2d');
+    fc.translate(off.width/2,off.height/2);fc.rotate(Math.PI);
+    fc.drawImage(off,-off.width/2,-off.height/2);
+    off8=fl;
+  }
+
+  // Rotate at 8x NEAREST then re-threshold to kill strays, then downscale
+  let rotated8=off8;
+  if(zone.angle!==0){
+    const angle=zone.angle*Math.PI/180;
+    const cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
+    const rw=Math.ceil(off8.width*cos+off8.height*sin);
+    const rh=Math.ceil(off8.width*sin+off8.height*cos);
+    const rot=document.createElement('canvas');rot.width=rw;rot.height=rh;
+    const rctx=rot.getContext('2d');
+    rctx.imageSmoothingEnabled=false;
+    rctx.translate(rw/2,rh/2);rctx.rotate(angle);
+    rctx.drawImage(off8,-off8.width/2,-off8.height/2);
+    // Re-threshold: transparent bg pixels → stay transparent, colored pixels → snap to text or transparent
+    const rid=rctx.getImageData(0,0,rw,rh);
+    const rd=rid.data;
+    for(let i=0;i<rd.length;i+=4){
+      if(rd[i+3]<128){rd[i]=255;rd[i+1]=255;rd[i+2]=255;rd[i+3]=0;continue;}
+      const dr2=rd[i]-r,dg2=rd[i+1]-g,db2=rd[i+2]-b;
+      const dw2=rd[i]-255,dgw=rd[i+1]-255,dbw=rd[i+2]-255;
+      if(dr2*dr2+dg2*dg2+db2*db2<dw2*dw2+dgw*dgw+dbw*dbw){rd[i]=r;rd[i+1]=g;rd[i+2]=b;rd[i+3]=255;}
+      else{rd[i]=255;rd[i+1]=255;rd[i+2]=255;rd[i+3]=0;}
+    }
+    rctx.putImageData(rid,0,0);
+    rotated8=rot;
+  }
+
+  // Downscale NEAREST
+  const small=document.createElement('canvas');
+  small.width=Math.ceil(rotated8.width/SCALE);small.height=Math.ceil(rotated8.height/SCALE);
+  const sctx=small.getContext('2d');
+  sctx.imageSmoothingEnabled=false;
+  sctx.drawImage(rotated8,0,0,small.width,small.height);
+
+  // Cleanup pass — remove isolated non-white pixels (stray pixels with no non-white neighbors)
+  const cid=sctx.getImageData(0,0,small.width,small.height);
+  const cd=cid.data;
+  const SW=small.width,SH=small.height;
+  const isWhite=(i)=>cd[i]===255&&cd[i+1]===255&&cd[i+2]===255;
+  const kills=[];
+  for(let y=0;y<SH;y++){
+    for(let x=0;x<SW;x++){
+      const i=(y*SW+x)*4;
+      if(isWhite(i)||cd[i+3]===0) continue;
+      // Check 8 neighbors
+      let hasNeighbor=false;
+      for(let dy=-1;dy<=1;dy++){
+        for(let dx=-1;dx<=1;dx++){
+          if(dx===0&&dy===0) continue;
+          const nx=x+dx,ny=y+dy;
+          if(nx<0||ny<0||nx>=SW||ny>=SH) continue;
+          const ni=(ny*SW+nx)*4;
+          if(!isWhite(ni)&&cd[ni+3]>0){hasNeighbor=true;break;}
+        }
+        if(hasNeighbor) break;
+      }
+      if(!hasNeighbor) kills.push(i);
+    }
+  }
+  for(const i of kills){cd[i]=255;cd[i+1]=255;cd[i+2]=255;cd[i+3]=0;}
+  sctx.putImageData(cid,0,0);
+
+  const final=small;
+  const mainCtx=mainCanvas.getContext('2d');
+  mainCtx.imageSmoothingEnabled=false;
+
+  if(zone.mode==='right'&&zone.rightEdge!=null){
+    const fd=final.getContext('2d').getImageData(0,0,final.width,final.height).data;
+    let inkRight=0;
+    for(let x=final.width-1;x>=0;x--){
+      let found=false;
+      for(let y=0;y<final.height;y++){
+        const i=(y*final.width+x)*4;
+        if(fd[i+3]>0&&!(fd[i]===255&&fd[i+1]===255&&fd[i+2]===255)){found=true;break;}
+      }
+      if(found){inkRight=x;break;}
+    }
+    mainCtx.drawImage(final,zone.rightEdge-inkRight,Math.round(zone.cy-final.height/2));
+  } else {
+    mainCtx.drawImage(final,Math.round(zone.cx-final.width/2),Math.round(zone.cy-final.height/2));
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Canvas → Indexed TIF (exact palette, no compression)
+// ─────────────────────────────────────────────────────────────────────────────
+function canvasToTIF(canvas,paletteColors){
+  // Write indexed (palette) TIFF — much smaller than RGB
+  const ctx=canvas.getContext('2d');
+  const id=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const w=canvas.width,h=canvas.height;
+  const pal=paletteColors.map(c=>({r:c[0],g:c[1],b:c[2]}));
+  const nColors=pal.length;
+
+  // Snap each pixel to nearest palette index
+  const indices=new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++){
+    const pr=id.data[i*4],pg=id.data[i*4+1],pb=id.data[i*4+2];
+    let best=0,bestD=Infinity;
+    for(let j=0;j<pal.length;j++){const d=(pr-pal[j].r)**2+(pg-pal[j].g)**2+(pb-pal[j].b)**2;if(d<bestD){bestD=d;best=j;}}
+    indices[i]=best;
+  }
+
+  // Build 256-entry colormap (TIFF colormap: 3 arrays of 256 uint16 values, scaled 0-65535)
+  const cmapSize=256*3*2; // 256 colors * 3 channels * 2 bytes each
+  const cmap=new Uint8Array(cmapSize);
+  const cmapView=new DataView(cmap.buffer);
+  for(let j=0;j<256;j++){
+    const c=j<nColors?pal[j]:{r:0,g:0,b:0};
+    // R channel: offset 0, G: offset 256*2, B: offset 512*2
+    cmapView.setUint16(j*2,       c.r*257,true); // scale 0-255 to 0-65535
+    cmapView.setUint16(256*2+j*2, c.g*257,true);
+    cmapView.setUint16(512*2+j*2, c.b*257,true);
+  }
+
+  // TIFF structure: header + IFD + colormap + strip data
+  const nT=12; // number of IFD tags
+  const ifdOff=8;
+  const cmapOff=ifdOff+2+nT*12+4; // colormap after IFD
+  const stripOff=cmapOff+cmapSize;
+  const total=stripOff+indices.length;
+
+  const buf=new ArrayBuffer(total);
+  const dv=new DataView(buf);
+  const u8=new Uint8Array(buf);
+  let p=0;
+  const w16=v=>{dv.setUint16(p,v,true);p+=2;};
+  const w32=v=>{dv.setUint32(p,v,true);p+=4;};
+
+  // Header
+  p=0;u8[p++]=0x49;u8[p++]=0x49;w16(42);w32(ifdOff);
+
+  // IFD
+  p=ifdOff;w16(nT);
+  const tag=(t,type,cnt,val)=>{dv.setUint16(p,t,true);p+=2;dv.setUint16(p,type,true);p+=2;dv.setUint32(p,cnt,true);p+=4;dv.setUint32(p,val,true);p+=4;};
+
+  // Extra values area - for BitsPerSample (single value 8)
+  let ep=ifdOff+2+nT*12+4;
+  // We'll store BitsPerSample as SHORT inline (count=1, val=8)
+  // XRes and YRes
+  const xrO=ep; dv.setUint32(ep,72,true);ep+=4;dv.setUint32(ep,1,true);ep+=4;
+  const yrO=ep; dv.setUint32(ep,72,true);ep+=4;dv.setUint32(ep,1,true);ep+=4;
+
+  tag(256,3,1,w);           // ImageWidth
+  tag(257,3,1,h);           // ImageLength
+  tag(258,3,1,8);           // BitsPerSample = 8
+  tag(259,3,1,1);           // Compression = None
+  tag(262,3,1,3);           // PhotometricInterpretation = Palette
+  tag(273,4,1,stripOff);    // StripOffsets
+  tag(277,3,1,1);           // SamplesPerPixel = 1
+  tag(278,3,1,h);           // RowsPerStrip
+  tag(279,4,1,indices.length); // StripByteCounts
+  tag(282,5,1,xrO);         // XResolution
+  tag(283,5,1,yrO);         // YResolution
+  tag(320,3,256*3,cmapOff); // ColorMap (256 entries * 3 channels)
+  w32(0);                   // Next IFD = none
+
+  // Write colormap
+  u8.set(cmap,cmapOff);
+
+  // Write pixel indices
+  u8.set(indices,stripOff);
+
+  return buf;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Process All
+// ─────────────────────────────────────────────────────────────────────────────
+async function processAll(){
+  results=[];
+  const btn=document.getElementById('processBtn');
+  const pw=document.getElementById('progWrap');
+  const pf=document.getElementById('progFill');
+  const pt=document.getElementById('progText');
+  const old=document.getElementById('dlBtn');if(old)old.remove();
+  btn.disabled=true;btn.textContent='PROCESSING...';pw.style.display='block';
+  const zip=new JSZip();let created=0,skipped=0;
+  const usedNames={};
+
+  log(`Loaded PSDs: ${Object.keys(psdFiles).join(', ')||'NONE'}`,'info');
+  log(`Loaded Fonts: ${Object.keys(fontFaces).join(', ')||'NONE'}`,'info');
+  log(`Order styles: ${[...new Set(orders.map(o=>o.style))].join(', ')||'NONE'}`,'info');
+
+  for(let i=0;i<orders.length;i++){
+    const o=orders[i];
+    pf.style.width=Math.round(i/orders.length*100)+'%';
+    pt.textContent=`Processing ${i+1} of ${orders.length}...`;
+    setRow(i,'processing');
+    const baseName_=`${o.orderNum}_${o.name}`;
+    usedNames[baseName_]=(usedNames[baseName_]||0)+1;
+    const outName=usedNames[baseName_]===1?`${baseName_}.tif`:`${baseName_}_${usedNames[baseName_]}.tif`;
+    const mapping=TEMPLATE_MAP[o.style];
+    if(!mapping){setRow(i,'skipped',`No template for "${o.style}"`);results.push({status:'skipped',reason:`No template for "${o.style}"`});log(`⚠ Skipped ${outName} — no template for "${o.style}"`,'warn');skipped++;continue;}
+    if(!psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')]){setRow(i,'skipped',`PSD not loaded: ${mapping.psd}`);results.push({status:'skipped',reason:`PSD not loaded: ${mapping.psd}`});log(`⚠ Skipped ${outName} — PSD not loaded: ${mapping.psd}`,'warn');skipped++;continue;}
+    const mf=mapping.zones.find(z=>!fontFaces[z.font]);
+    if(mf){setRow(i,'skipped',`Font not loaded: ${mf.font}`);results.push({status:'skipped',reason:`Font not loaded: ${mf.font}`});log(`⚠ Skipped ${outName} — font not loaded: ${mf.font}`,'warn');skipped++;continue;}
+    try{
+      const canvas=await psdToCanvas(psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')],mapping.psd);
+      const baseName=o.name.trim().charAt(0).toUpperCase()+o.name.trim().slice(1).toLowerCase();
+      for(const zone of mapping.zones){
+        const display=zone.uppercase?baseName.toUpperCase():baseName;
+        const enrichedZone=Object.assign({},zone,{antialias:!!mapping.antialias,palette:mapping.palette});
+        renderTextZone(canvas,display,enrichedZone,fontFaces[zone.font]);
+      }
+      zip.file(outName,canvasToTIF(canvas,mapping.palette));
+      setRow(i,'created');results.push({status:'created'});log(`✅ ${outName}`,'ok');created++;
+    }catch(err){setRow(i,'error',err.message);results.push({status:'error',reason:err.message});log(`❌ ${outName} — ${err.message}`,'err');}
+    await new Promise(r=>setTimeout(r,0));updateStats();
+  }
+
+  pf.style.width='100%';pt.textContent=`Done — ${created} created, ${skipped} skipped`;
+  const rpt=[`BaubleBar Personalization Run`,`Date: ${new Date().toLocaleString()}`,'─'.repeat(50),`Total Kids orders : ${orders.length}`,`✅ TIFs created   : ${created}`,`⚠  Skipped        : ${skipped}`,``];
+  orders.forEach((o,idx)=>{if(results[idx]?.status==='skipped')rpt.push(`  - ${o.orderNum}_${o.name}.tif  →  ${results[idx].reason||''}`);});
+  zip.file('REPORT.txt',rpt.join('\n'));
+  if(created>0){
+    const blob=await zip.generateAsync({type:'blob'});
+    const url=URL.createObjectURL(blob);
+    const fname=`${window.spreadsheetBaseName||'BaubleBar_TIFs_'+new Date().toISOString().slice(0,10)}.zip`;
+    const a=document.createElement('a');a.href=url;a.download=fname;a.style.display='none';
+    document.body.appendChild(a);a.click();setTimeout(()=>document.body.removeChild(a),2000);
+    const dl=document.createElement('a');dl.id='dlBtn';dl.href=url;dl.download=fname;
+    dl.className='dl-btn';dl.textContent=`⬇ DOWNLOAD ZIP — ${created} TIF${created>1?'s':''}`;
+    document.getElementById('progWrap').insertAdjacentElement('afterend',dl);
+    log(`📦 ZIP ready — ${created} TIFs`,'ok');
+  }
+  btn.disabled=false;btn.textContent='PROCESS ALL ORDERS';updateStats();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Calibration Tab
+// ─────────────────────────────────────────────────────────────────────────────
+let calBlankData=null,calBlankName='',calFinishedData=null,calFinishedName='';
+
+function calLoadBlank(file){
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{calBlankData=e.target.result;calBlankName=file.name;document.getElementById('calBlankName').textContent=file.name;checkCalReady();};
+  r.readAsArrayBuffer(file);
+}
+
+function calLoadFinished(file){
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{calFinishedData=e.target.result;calFinishedName=file.name;document.getElementById('calFinishedName').textContent=file.name;checkCalReady();};
+  r.readAsArrayBuffer(file);
+}
+
+function checkCalReady(){
+  document.getElementById('calBtn').disabled=!(calBlankData&&calFinishedData&&document.getElementById('calStyleName').value.trim());
+}
+document.getElementById('calStyleName').addEventListener('input',checkCalReady);
+
+async function runCalibration(){
+  const styleName=document.getElementById('calStyleName').value.trim();
+  const sampleName=document.getElementById('calSampleName').value.trim().toLowerCase();
+  const fontFile=document.getElementById('calFontFile').value.trim();
+
+  // Load both images
+  const blankImg=await loadImageFromBuffer(calBlankData,calBlankName);
+  const finImg=await loadImageFromBuffer(calFinishedData,calFinishedName);
+
+  const bArr=getPixels(blankImg);
+  const fArr=getPixels(finImg);
+  const w=blankImg.width,h=blankImg.height;
+
+  // Get finished palette
+  const finColors=getUniqueColors(fArr,w,h);
+  const palette=finColors.map(c=>[c.r,c.g,c.b]);
+
+  // Find zones: colors that appear in finished but not (or fewer) in blank
+  const zones=[];
+  for(const fc of finColors){
+    if(fc.r===255&&fc.g===255&&fc.b===255)continue; // skip white
+    const added=findAddedPixels(bArr,fArr,w,h,fc.r,fc.g,fc.b);
+    if(added.length<20)continue;
+    // Split into clusters
+    const clusters=clusterPixels(added,w,h);
+    for(const cluster of clusters){
+      if(cluster.length<10)continue;
+      const xs=cluster.map(p=>p%w);
+      const ys=cluster.map(p=>Math.floor(p/w));
+      const l=Math.min(...xs),r2=Math.max(...xs),t=Math.min(...ys),b2=Math.max(...ys);
+      const cx=Math.round((l+r2)/2),cy=Math.round((t+b2)/2);
+      const zw=r2-l,zh=b2-t;
+      // Estimate angle from pixel regression
+      const angle=estimateAngle(xs,ys);
+      zones.push({cx,cy,w:zw,h:zh,angle:Math.round(angle*10)/10,color:[fc.r,fc.g,fc.b,255]});
+    }
+  }
+
+  // Generate config
+  const psdName=document.getElementById('calBlankName').textContent;
+  const config={
+    psd:psdName,
+    palette,
+    zones:zones.map(z=>({
+      font:fontFile||'YOUR_FONT.TTF',
+      cx:z.cx,cy:z.cy,w:z.w,h:z.h,
+      angle:z.angle,
+      color:z.color,
+      mode: Math.abs(z.angle)>20?'diag':'fit'
+    }))
+  };
+
+  const code=`'${styleName}': ${JSON.stringify(config,null,2)}`;
+  document.getElementById('calCode').textContent=code;
+  document.getElementById('calResult').style.display='block';
+}
+
+function loadImageFromBuffer(buffer,filename){
+  return new Promise(res=>{
+    const ext=(filename||'').split('.').pop().toLowerCase();
+    const mime=ext==='bmp'?'image/bmp':ext==='png'?'image/png':ext==='jpg'||ext==='jpeg'?'image/jpeg':'image/tiff';
+    const blob=new Blob([buffer],{type:mime});
+    const url=URL.createObjectURL(blob);
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement('canvas');c.width=img.width;c.height=img.height;
+      c.getContext('2d').drawImage(img,0,0);URL.revokeObjectURL(url);res(c);
+    };
+    img.src=url;
+  });
+}
+
+function getPixels(canvas){return canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;}
+
+function getUniqueColors(data,w,h){
+  const map={};
+  for(let i=0;i<w*h;i++){
+    const r=data[i*4],g=data[i*4+1],b=data[i*4+2];
+    const k=`${r},${g},${b}`;
+    if(!map[k])map[k]={r,g,b,count:0};
+    map[k].count++;
+  }
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+
+function findAddedPixels(bArr,fArr,w,h,r,g,b){
+  const added=[];
+  for(let i=0;i<w*h;i++){
+    const fi=i*4;
+    if(fArr[fi]===r&&fArr[fi+1]===g&&fArr[fi+2]===b){
+      if(!(bArr[fi]===r&&bArr[fi+1]===g&&bArr[fi+2]===b))added.push(i);
+    }
+  }
+  return added;
+}
+
+function clusterPixels(pixels,w,h){
+  if(!pixels.length)return[];
+  const rowMap={};
+  for(const p of pixels){const y=Math.floor(p/w);if(!rowMap[y])rowMap[y]=[];rowMap[y].push(p);}
+  const rows=Object.keys(rowMap).map(Number).sort((a,b)=>a-b);
+  const clusters=[];let current=[rows[0]];
+  for(let i=1;i<rows.length;i++){
+    if(rows[i]-rows[i-1]>15){clusters.push(current);current=[rows[i]];}
+    else current.push(rows[i]);
+  }
+  clusters.push(current);
+  return clusters.map(rs=>rs.flatMap(r=>rowMap[r]));
+}
+
+function estimateAngle(xs,ys){
+  if(xs.length<2)return 0;
+  const n=xs.length;
+  const mx=xs.reduce((a,b)=>a+b,0)/n;
+  const my=ys.reduce((a,b)=>a+b,0)/n;
+  let num=0,den=0;
+  for(let i=0;i<n;i++){num+=(xs[i]-mx)*(ys[i]-my);den+=(xs[i]-mx)**2;}
+  if(den===0)return 0;
+  return Math.atan(num/den)*180/Math.PI;
+}
+
+function copyCalResult(){
+  navigator.clipboard.writeText(document.getElementById('calCode').textContent);
+  const btn=document.querySelector('.copy-btn');btn.textContent='COPIED!';
+  setTimeout(()=>btn.textContent='COPY',2000);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Google Auth + Whitelist + Drive Sync
+// ─────────────────────────────────────────────────────────────────────────────
+let gAccessToken = null;
+let gUserEmail   = null;
+let gUserName    = null;
+let gUserPic     = null;
+let tokenClient  = null;
+
+const isConfigured = () =>
+  GOOGLE_CONFIG.CLIENT_ID !== 'YOUR_CLIENT_ID.apps.googleusercontent.com' &&
+  GOOGLE_CONFIG.WHITELIST_SHEET !== 'YOUR_SHEET_ID' &&
+  GOOGLE_CONFIG.ASSETS_FOLDER   !== 'YOUR_FOLDER_ID';
+
+function setAuthStatus(msg, type=''){
+  const el = document.getElementById('authStatus');
+  el.textContent = msg;
+  el.className = 'auth-status' + (type ? ' '+type : '');
+}
+
+function showApp(){
+  document.getElementById('authOverlay').classList.add('hidden');
+  if(gUserName){
+    document.getElementById('headerUserChip').style.display='flex';
+    document.getElementById('headerAvatar').src = gUserPic||'';
+    document.getElementById('headerName').textContent = gUserName;
+  }
+}
+
+function signOut(){
+  google.accounts.id.disableAutoSelect();
+  gAccessToken=null; gUserEmail=null; gUserName=null; gUserPic=null;
+  document.getElementById('authOverlay').classList.remove('hidden');
+  document.getElementById('authUserChip').style.display='none';
+  document.getElementById('googleSignInBtn').style.display='block';
+  document.getElementById('headerUserChip').style.display='none';
+  setAuthStatus('Signed out. Sign in to continue.');
+}
+
+async function checkWhitelist(email){
+  if(!isConfigured()) return true;
+  try{
+    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.WHITELIST_SHEET}/values/A:A`,{
+      headers:{ Authorization:`Bearer ${gAccessToken}` }
+    });
+    if(!r.ok){
+      const errText = await r.text();
+      console.error('Whitelist sheet error:', r.status, errText);
+      setAuthStatus(`Whitelist read failed (${r.status}) — contact your administrator.`,'err');
+      return false;
+    }
+    const d = await r.json();
+    console.log('Whitelist raw response:', JSON.stringify(d));
+    const emails = (d.values||[]).flat().map(e=>e.trim().toLowerCase());
+    console.log('Whitelist emails found:', emails);
+    console.log('Checking against:', email.toLowerCase());
+    return emails.includes(email.toLowerCase());
+  }catch(e){
+    console.error('Whitelist check failed:',e);
+    setAuthStatus(`Whitelist check error: ${e.message}`,'err');
+    return false;
+  }
+}
+
+async function onGoogleCredential(response){
+  // Decode the JWT id_token to get user info
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  gUserEmail = payload.email;
+  gUserName  = payload.name;
+  gUserPic   = payload.picture;
+
+  setAuthStatus(`Checking access for ${gUserEmail}…`);
+
+  // Now get an access token for Drive/Sheets
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CONFIG.CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets.readonly',
+    callback: async (tokenResponse) => {
+      if(tokenResponse.error){ setAuthStatus('Authorization failed: '+tokenResponse.error,'err'); return; }
+      gAccessToken = tokenResponse.access_token;
+
+      const allowed = await checkWhitelist(gUserEmail);
+      if(!allowed){
+        setAuthStatus(`Access denied — ${gUserEmail} is not on the approved list.`,'err');
+        document.getElementById('authUserChip').style.display='flex';
+        document.getElementById('authAvatar').src = gUserPic||'';
+        document.getElementById('authNameLabel').textContent = gUserName + ' (' + gUserEmail + ')';
+        document.getElementById('googleSignInBtn').style.display='none';
+        return;
+      }
+
+      document.getElementById('syncBtn').disabled = false;
+      showApp();
+      log(`Signed in as ${gUserEmail}`,'ok');
+      setDriveStatus('Signed in — ready to sync assets from Drive');
+      await syncFromDrive();
+    },
+    prompt: ''
+  });
+  tokenClient.requestAccessToken();
+}
+
+function initGoogleAuth(){
+  if(!isConfigured()){
+    document.getElementById('setupBanner').classList.add('visible');
+    document.getElementById('authOverlay').classList.add('hidden'); // bypass for dev
+    document.getElementById('driveBar').style.display='none';
+    log('⚠ Google config not set — running in local-only mode','warn');
+    return;
+  }
+  try{
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CONFIG.CLIENT_ID,
+      callback: onGoogleCredential,
+      auto_select: true,
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('googleSignInBtn'),
+      { theme:'filled_black', size:'large', text:'signin_with', shape:'rectangular' }
+    );
+    google.accounts.id.prompt();
+    setAuthStatus('Sign in with your Google account to continue.');
+  }catch(e){
+    setAuthStatus('Failed to load Google Sign-In: '+e.message,'err');
+  }
+}
+
+function setDriveStatus(msg){
+  document.getElementById('driveStatusText').textContent = msg;
+}
+
+async function syncFromDrive(){
+  if(!gAccessToken){ log('Not signed in — cannot sync from Drive','warn'); return; }
+  if(!isConfigured()){ log('Google config not set','warn'); return; }
+  const btn = document.getElementById('syncBtn');
+  btn.disabled = true;
+  btn.textContent = '⟳ SYNCING…';
+  setDriveStatus('Syncing assets from Drive…');
+  log('Syncing assets from Google Drive…','info');
+
+  try{
+    // List files in the configured folder
+    const listUrl = `https://www.googleapis.com/drive/v3/files?q='${GOOGLE_CONFIG.ASSETS_FOLDER}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,modifiedTime)&pageSize=200`;
+    const lr = await fetch(listUrl,{ headers:{ Authorization:`Bearer ${gAccessToken}` } });
+    if(!lr.ok) throw new Error('Drive list failed: '+lr.status);
+    const listing = await lr.json();
+    const files = (listing.files||[]).filter(f=>{
+      const ext = f.name.split('.').pop().toLowerCase();
+      return ['psd','bmp','ttf','otf'].includes(ext);
+    });
+
+    if(!files.length){ setDriveStatus('No PSD/BMP/font files found in Drive folder'); btn.disabled=false; btn.textContent='⟳ SYNC FROM DRIVE'; return; }
+
+    let p=0, f=0, skipped=0;
+    for(const file of files){
+      try{
+        const ext = file.name.split('.').pop().toLowerCase();
+        const dlUrl = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`;
+        const dr = await fetch(dlUrl,{ headers:{ Authorization:`Bearer ${gAccessToken}` } });
+        if(!dr.ok){ log(`⚠ Could not download ${file.name}`,'warn'); skipped++; continue; }
+        const buf = await dr.arrayBuffer();
+        if(ext==='psd'||ext==='bmp'){
+          const nk = file.name.toLowerCase().replace(/\s+/g,'_');
+          psdFiles[nk]=buf;
+          await dbPut({name:nk,type:'psd',data:buf});
+          p++;
+        } else if(['ttf','otf'].includes(ext)){
+          const nk = file.name.replace(/\s+/g,'_');
+          await registerFont(nk,buf);
+          await dbPut({name:nk,type:'font',data:buf});
+          f++;
+        }
+      }catch(fe){ log(`⚠ Error syncing ${file.name}: ${fe.message}`,'warn'); skipped++; }
+    }
+
+    renderFileStatus(); checkReady();
+    const msg = `Drive sync complete — ${p} template${p!==1?'s':''}, ${f} font${f!==1?'s':''}${skipped?' ('+skipped+' skipped)':''}`;
+    setDriveStatus('☁ '+msg);
+    log(msg,'ok');
+  }catch(e){
+    log('Drive sync error: '+e.message,'err');
+    setDriveStatus('Sync failed — see log');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⟳ SYNC FROM DRIVE';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────────────────────
+(async()=>{
+  await openDB();
+  await loadCache();
+  checkReady();
+  // Wait for Google Identity Services to load then init auth
+  const waitForGIS = setInterval(()=>{
+    if(window.google?.accounts?.id){
+      clearInterval(waitForGIS);
+      initGoogleAuth();
+    }
+  }, 100);
+  setTimeout(()=>{ clearInterval(waitForGIS); if(!isConfigured()) return; setAuthStatus('Google Sign-In failed to load — check your internet connection.','err'); },10000);
+})();
+</script>
+</body>
+</html>
