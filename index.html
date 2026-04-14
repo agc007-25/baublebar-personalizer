@@ -369,7 +369,27 @@ const CLIENT_REGISTRY = {
           {font:'KEEPONTRUCKIN.TTF',cx:216,cy:300,w:160,h:24,angle:16.1, color:[137,136,135,255],mode:'diag',uppercase:true}
         ]
       },
-      // ── THROW — to be added after calibration ─────────────────────────────
+      // ── THROW ─────────────────────────────────────────────────────────────
+      'Spell It Out|Throw':{
+        psd:'SPELL_IT_OUT_SMALL.Bmp',
+        palette:[[45,45,45],[255,255,255]],
+        zones:[{font:'DEALERPLATE_CALIFORNIA.TTF',cx:179,cy:249,w:330,h:60,angle:0,color:[45,45,45,255],mode:'fit'}]
+      },
+      'Down The Line|Throw':{
+        psd:'Down_The_Line-Stone_-_SMALL_MASTER_3_4__Natural_5_6__Stone.bmp',
+        palette:[[0,0,0],[155,155,155],[230,230,229],[255,255,255]],
+        zones:[{font:'SORIA-BOLD.OTF',cx:149,cy:252,w:451,h:63,angle:-90,color:[0,0,0,255],mode:'right',rightEdge:183}]
+      },
+      'Subtly Scalloped|Throw':{
+        psd:'Subtly_Scalloped_Small.bmp',
+        palette:[[255,255,255],[207,207,207],[115,115,115],[0,0,0]],
+        zones:[{font:'ETERNATE_BOLD.OTF',cx:178,cy:246,w:326,h:112,hCrop:130,hCropBias:5,angle:0,color:[0,0,0,255],mode:'midbody'}]
+      },
+      'Wild at Heart|Throw':{
+        psd:'WILD_AT_HEART_SMALL_2_COLOR.Bmp',
+        palette:[[45,45,45],[128,128,128],[192,192,192],[255,255,255]],
+        zones:[{font:'TREBUCBD.TTF',cx:179,cy:233,w:170,h:25,angle:0,color:[45,45,45,255],mode:'fit',uppercase:true}]
+      },
     }
   },
 
@@ -722,9 +742,10 @@ function renderTextZone(mainCanvas,display,zone,faceName){
       if(srcLen>0) shifted.set(px.subarray(srcOff,srcOff+srcLen),0);
     }
 
-    // Crop to hCrop zone centered at cyTarget
+    // Crop to hCrop zone centered at cyTarget, with optional bias (px) to shift window down
+    const hCropBias=(zone.hCropBias||0)*SCALE;
     const halfH=Math.floor(hCrop*SCALE/2);
-    const cropTop=cyTarget*SCALE-halfH;
+    const cropTop=cyTarget*SCALE-halfH+hCropBias;
     const cropBot=cropTop+hCrop*SCALE;
     const cropCanvas=document.createElement('canvas');cropCanvas.width=rw;cropCanvas.height=hCrop*SCALE;
     const cctx=cropCanvas.getContext('2d');
