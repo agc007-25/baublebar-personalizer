@@ -459,7 +459,7 @@ function TEMPLATE_MAP() {
 // ─────────────────────────────────────────────────────────────────────────────
 // IndexedDB
 // ─────────────────────────────────────────────────────────────────────────────
-const DB_NAME='KnitAssetsV1',DB_VER=1;
+const DB_NAME='KnitAssetsV2',DB_VER=2;
 let db=null;
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('files'))d.createObjectStore('files',{keyPath:'name'});};r.onsuccess=e=>{db=e.target.result;res(db);};r.onerror=e=>rej(e.target.error);});}
 function dbPut(obj){return new Promise((res,rej)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').put(obj).onsuccess=()=>res();});}
@@ -1433,19 +1433,20 @@ async function syncFromDrive(){
   const btn = document.getElementById('syncBtn');
   btn.disabled = true;
   btn.textContent = '⟳ SYNCING…';
-  setDriveStatus('Syncing assets from Drive…');
+  setDriveStatus('Contacting Drive…');
   log('Syncing assets from Google Drive…','info');
 
   try{
-    // List files in the configured folder
     const clientCfg = CLIENT_REGISTRY[activeClient];
-  const folderID = clientCfg ? clientCfg.driveFolder : null;
-  if(!folderID || folderID.startsWith('YOUR_')){
-    log('Drive folder not configured for '+activeClient,'warn');
-    setDriveStatus('Drive folder not configured for this client');
-    btn.disabled=false; btn.textContent='⟳ SYNC FROM DRIVE'; return;
-  }
-  const listUrl = `https://www.googleapis.com/drive/v3/files?q='${folderID}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,modifiedTime)&pageSize=200`;
+    const folderID = clientCfg ? clientCfg.driveFolder : null;
+    if(!folderID || folderID.startsWith('YOUR_')){
+      log('Drive folder not configured for '+activeClient,'warn');
+      setDriveStatus('Drive folder not configured for this client');
+      btn.disabled=false; btn.textContent='⟳ SYNC FROM DRIVE'; return;
+    }
+
+    // ── 1. List all files in folder ──────────────────────────────────────────
+    const listUrl = `https://www.googleapis.com/drive/v3/files?q='${folderID}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,modifiedTime)&pageSize=500`;
     const lr = await fetch(listUrl,{ headers:{ Authorization:`Bearer ${gAccessToken}` } });
     if(!lr.ok) throw new Error('Drive list failed: '+lr.status);
     const listing = await lr.json();
@@ -1453,42 +1454,82 @@ async function syncFromDrive(){
       const ext = f.name.split('.').pop().toLowerCase();
       return ['psd','bmp','ttf','otf'].includes(ext);
     });
+    if(!files.length){
+      setDriveStatus('No PSD/BMP/font files found in Drive folder');
+      btn.disabled=false; btn.textContent='⟳ SYNC FROM DRIVE'; return;
+    }
 
-    if(!files.length){ setDriveStatus('No PSD/BMP/font files found in Drive folder'); btn.disabled=false; btn.textContent='⟳ SYNC FROM DRIVE'; return; }
+    // ── 2. Build cache index keyed by filename ───────────────────────────────
+    const cached = await dbGetAll();
+    const cacheIndex = {};
+    cached.forEach(c => { cacheIndex[c.name] = c.modifiedTime || null; });
 
-    let p=0, f=0, skipped=0;
-    for(const file of files){
+    // ── 3. Determine which files need downloading ────────────────────────────
+    const toDownload = files.filter(f => {
+      const ext = f.name.split('.').pop().toLowerCase();
+      const nk = (['psd','bmp'].includes(ext))
+        ? f.name.toLowerCase().replace(/\s+/g,'_')
+        : f.name.replace(/\s+/g,'_');
+      return cacheIndex[nk] !== f.modifiedTime;
+    });
+
+    const upToDate = files.length - toDownload.length;
+    if(!toDownload.length){
+      // Everything cached and current — just reload from IndexedDB
+      await loadCache();
+      const msg = `All ${files.length} assets up to date — loaded from cache`;
+      setDriveStatus('☁ '+msg); log(msg,'ok');
+      btn.disabled=false; btn.textContent='⟳ SYNC FROM DRIVE'; return;
+    }
+
+    log(`${upToDate} assets up to date · downloading ${toDownload.length} new/changed…`,'info');
+
+    // ── 4. Parallel download with concurrency limit of 10 ───────────────────
+    const CONCURRENCY = 10;
+    let p=0, f=0, errCount=0, done=0;
+
+    async function downloadOne(file){
       try{
         const ext = file.name.split('.').pop().toLowerCase();
+        setDriveStatus(`Syncing ${++done} of ${toDownload.length}…`);
         const dlUrl = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`;
         const dr = await fetch(dlUrl,{ headers:{ Authorization:`Bearer ${gAccessToken}` } });
-        if(!dr.ok){ log(`⚠ Could not download ${file.name}`,'warn'); skipped++; continue; }
+        if(!dr.ok){ log(`⚠ Could not download ${file.name}`,'warn'); errCount++; return; }
         const buf = await dr.arrayBuffer();
         if(ext==='psd'||ext==='bmp'){
           const nk = file.name.toLowerCase().replace(/\s+/g,'_');
           psdFiles[nk]=buf;
-          await dbPut({name:nk,type:'psd',data:buf});
+          await dbPut({name:nk,type:'psd',data:buf,modifiedTime:file.modifiedTime});
           p++;
         } else if(['ttf','otf'].includes(ext)){
           const nk = file.name.replace(/\s+/g,'_');
           await registerFont(nk,buf);
-          await dbPut({name:nk,type:'font',data:buf});
+          await dbPut({name:nk,type:'font',data:buf,modifiedTime:file.modifiedTime});
           f++;
         }
-      }catch(fe){ log(`⚠ Error syncing ${file.name}: ${fe.message}`,'warn'); skipped++; }
+      }catch(fe){ log(`⚠ Error syncing ${file.name}: ${fe.message}`,'warn'); errCount++; }
+    }
+
+    // Run in batches of CONCURRENCY
+    for(let i=0; i<toDownload.length; i+=CONCURRENCY){
+      const batch = toDownload.slice(i, i+CONCURRENCY);
+      await Promise.all(batch.map(downloadOne));
     }
 
     renderFileStatus(); checkReady();
-    const msg = `Drive sync complete — ${p} template${p!==1?'s':''}, ${f} font${f!==1?'s':''}${skipped?' ('+skipped+' skipped)':''}`;
+    const msg = `Sync complete — ${p} template${p!==1?'s':''}, ${f} font${f!==1?'s':''}` +
+                (upToDate ? ` · ${upToDate} unchanged` : '') +
+                (errCount ? ` · ${errCount} errors` : '');
     setDriveStatus('☁ '+msg);
     log(msg,'ok');
+
   }catch(e){
     log('Drive sync error: '+e.message,'err');
     setDriveStatus('Sync failed — see log');
   }
 
-  btn.disabled = false;
-  btn.textContent = '⟳ SYNC FROM DRIVE';
+  btn.disabled=false;
+  btn.textContent='⟳ SYNC FROM DRIVE';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
