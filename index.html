@@ -413,15 +413,36 @@ const CLIENT_REGISTRY = {
     label:       'In2Green',
     driveFolder: '1RAXnLGlD7g-CcCIfL7iAe51Gz9VBjWJF', // In2Green subfolder in Knit Assets
     columns: {
-      orderNum: 'Order Number',      // update when client spreadsheet is known
-      name:     'Name',
-      style:    'Style',
-      size:     'Size',
+      orderNum: 'Reference',
+      name:     'Line 1',
+      line2:    'Line 2',
+      style:    'Product/Name',
+      size:     'Product/Product/Size',
+      caseMode: 'Font Case',
       font:     null, // In2Green: font is fixed per template
     },
     sizeFilter: [],  // empty = accept all sizes
     templates: {
-      // To be added when client templates are calibrated
+      'Baby Farm':{
+        psd:'Baby_Farm.bmp',
+        palette:[[255,255,255],[197,197,197],[139,139,139],[0,0,0]],
+        zones:[{font:'Adobe Garamond Pro Bold',cx:139,cy:339,w:226,h:50,angle:0,color:[0,0,0,255],mode:'fit',uppercase:true}]
+      },
+      'Baby Happy Camper':{
+        psd:'Baby_Happy_Camper.bmp',
+        palette:[[255,255,255],[205,205,205],[156,156,156],[0,0,0]],
+        zones:[{font:'Alternative Gothic N2',cx:320,cy:250,w:320,h:50,angle:0,color:[0,0,0,255],mode:'fit',uppercase:true}]
+      },
+      'Baby Herringbone':{
+        psd:'Baby_Herringbone.bmp',
+        palette:[[255,255,255],[213,213,213],[180,189,180],[0,0,0]],
+        zones:[{font:'Gotham',cx:153,cy:296,w:229,h:50,angle:0,color:[0,0,0,255],mode:'fit',uppercase:true}]
+      },
+      'Herringbone Stripe':{
+        psd:'Herringbone_Stripe.bmp',
+        palette:[[246,246,246],[222,213,213],[106,106,115],[0,0,0]],
+        zones:[{font:'Gotham',cx:56,cy:468,w:200,h:40,angle:90,color:[0,0,0,255],mode:'diag',uppercase:false}]
+      },
     }
   },
 
