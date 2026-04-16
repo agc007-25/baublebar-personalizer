@@ -471,6 +471,31 @@ function dbClearAll(){return new Promise((res,rej)=>{const tx=db.transaction('fi
 // ─────────────────────────────────────────────────────────────────────────────
 let orders=[],psdFiles={},fontFaces={},results=[];
 
+// Normalize a font name from the registry to match the storage key in fontFaces.
+// Handles both 'Adobe Garamond Pro Bold' and 'SORIA-BOLD.OTF' styles.
+function fontKey(name){
+  if(!name) return '';
+  // Strip known extensions
+  const stripped = name.replace(/\.(ttf|otf|TTF|OTF)$/, '');
+  // Replace spaces with underscores, keep existing underscores and hyphens
+  return stripped.replace(/\s+/g,'_');
+}
+// Look up a font face by registry name — tries normalized key with and without extension
+function lookupFont(name){
+  if(!name) return null;
+  // Try exact match first
+  if(fontFaces[name]) return fontFaces[name];
+  // Try normalized (spaces→underscores, no extension)
+  const nk = fontKey(name);
+  if(fontFaces[nk]) return fontFaces[nk];
+  // Try with common extensions appended
+  for(const ext of ['.ttf','.otf','.TTF','.OTF']){
+    if(fontFaces[nk+ext]) return fontFaces[nk+ext];
+    if(fontFaces[name.replace(/\s+/g,'_')+ext]) return fontFaces[name.replace(/\s+/g,'_')+ext];
+  }
+  return null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tabs
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1067,18 +1092,18 @@ async function processAll(){
     if(!psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')]){setRow(i,'skipped',`PSD not loaded: ${mapping.psd}`);results.push({status:'skipped',reason:`PSD not loaded: ${mapping.psd}`});log(`⚠ Skipped ${outName} — PSD not loaded: ${mapping.psd}`,'warn');skipped++;continue;}
     // Resolve zones — if order has a font override, apply it to all zones
     const resolvedZones = mapping.zones.map(z=>{
-      if(o.font && fontFaces[o.font.replace(/\s+/g,'_')]) return Object.assign({},z,{font:o.font.replace(/\s+/g,'_')});
+      if(o.font && lookupFont(o.font)) return Object.assign({},z,{font:o.font});
       return z;
     });
-    const mf=resolvedZones.find(z=>!fontFaces[z.font]);
-    if(mf){setRow(i,'skipped',`Font not loaded: ${mf.font}`);results.push({status:'skipped',reason:`Font not loaded: ${mf.font}`});log(`⚠ Skipped ${outName} — font not loaded: ${mf.font}`,'warn');skipped++;continue;}
+    const mf=resolvedZones.find(z=>!lookupFont(z.font));
+    if(mf){setRow(i,'skipped',`Font not loaded: ${mf.font}`);results.push({status:'skipped',reason:`Font not loaded: ${mf.font}`});log(`⚠ Skipped ${outName} — font not loaded: ${mf.font} (tried key: ${fontKey(mf.font)})`,'warn');skipped++;continue;}
     try{
       const canvas=await psdToCanvas(psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')],mapping.psd);
       const baseName=o.name.trim().charAt(0).toUpperCase()+o.name.trim().slice(1).toLowerCase();
       for(const zone of resolvedZones){
         const display=zone.uppercase?baseName.toUpperCase():baseName;
         const enrichedZone=Object.assign({},zone,{antialias:!!mapping.antialias,palette:mapping.palette});
-        renderTextZone(canvas,display,enrichedZone,fontFaces[zone.font]);
+        renderTextZone(canvas,display,enrichedZone,lookupFont(zone.font));
       }
       zip.file(outName,canvasToTIF(canvas,mapping.palette));
       setRow(i,'created');results.push({status:'created'});log(`✅ ${outName}`,'ok');created++;
