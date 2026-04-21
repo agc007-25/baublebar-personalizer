@@ -609,15 +609,44 @@ async function clearCache(){
 }
 
 function renderFileStatus(){
-  const pn=Object.keys(psdFiles),fn=Object.keys(fontFaces);
+  const pn=Object.keys(psdFiles), fn=Object.keys(fontFaces);
   const bar=document.getElementById('cachedBar');
-  if(pn.length+fn.length>0){bar.style.display='flex';document.getElementById('cachedCount').textContent=`${pn.length} template${pn.length!==1?'s':''}, ${fn.length} font${fn.length!==1?'s':''}`;}
-  else bar.style.display='none';
-  const allFonts=Object.values(TEMPLATE_MAP()).flatMap(t=>t.zones.map(z=>z.font));
-  document.getElementById('filePills').innerHTML=[
-    ...pn.map(n=>{const m=Object.values(TEMPLATE_MAP()).some(t=>t.psd.toLowerCase().replace(/\s+/g,'_')===n.toLowerCase().replace(/\s+/g,'_'));return`<div class="pill"><span class="pdot ${m?'ok':'warn'}"></span>${n}</div>`;}),
-    ...fn.map(n=>{const m=!allFonts.length||allFonts.includes(n);return`<div class="pill"><span class="pdot ${m?'ok':'warn'}"></span>${n}</div>`;})
-  ].join('');
+  const total=pn.length+fn.length;
+  if(total>0){
+    bar.style.display='flex';
+    document.getElementById('cachedCount').textContent=
+      `${pn.length} template${pn.length!==1?'s':''}, ${fn.length} font${fn.length!==1?'s':''} loaded`;
+  } else {
+    bar.style.display='none';
+  }
+
+  // Check for missing assets against active client templates — show warnings only
+  const warnings=[];
+  if(activeClient){
+    const tmap=TEMPLATE_MAP();
+    const allFonts=Object.values(tmap).flatMap(t=>t.zones.map(z=>z.font));
+    // Missing blanks
+    Object.values(tmap).forEach(t=>{
+      const nk=t.psd.toLowerCase().replace(/\s+/g,'_');
+      if(!psdFiles[nk]) warnings.push(`Missing blank: ${t.psd}`);
+    });
+    // Missing fonts
+    allFonts.forEach(f=>{
+      if(!lookupFont(f)) warnings.push(`Missing font: ${f}`);
+    });
+  }
+
+  // Render: summary line + warnings only
+  const pills=document.getElementById('filePills');
+  if(warnings.length){
+    pills.innerHTML=warnings.map(w=>
+      `<div class="pill"><span class="pdot warn"></span>${w}</div>`
+    ).join('');
+  } else if(total>0){
+    pills.innerHTML=`<div class="pill"><span class="pdot ok"></span>All assets accounted for</div>`;
+  } else {
+    pills.innerHTML='';
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1284,6 +1313,18 @@ function copyCalResult(){
 // Google Auth + Whitelist + Drive Sync
 // ─────────────────────────────────────────────────────────────────────────────
 let gAccessToken = null;
+let tokenRefreshTimer = null;
+const TOKEN_LIFETIME_MS = 55 * 60 * 1000; // refresh every 55 min (token lasts 60)
+
+function scheduleTokenRefresh(){
+  if(tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
+  tokenRefreshTimer = setTimeout(()=>{
+    if(tokenClient){
+      log('Refreshing access token…','info');
+      tokenClient.requestAccessToken();
+    }
+  }, TOKEN_LIFETIME_MS);
+}
 let gUserEmail   = null;
 let gUserName    = null;
 let gUserPic     = null;
@@ -1314,6 +1355,7 @@ function showApp(){
 function signOut(){
   google.accounts.id.disableAutoSelect();
   gAccessToken=null; gUserEmail=null; gUserName=null; gUserPic=null;
+  if(tokenRefreshTimer){ clearTimeout(tokenRefreshTimer); tokenRefreshTimer=null; }
   document.getElementById('authOverlay').classList.remove('hidden');
   document.getElementById('authUserChip').style.display='none';
   document.getElementById('googleSignInBtn').style.display='block';
@@ -1362,6 +1404,7 @@ async function onGoogleCredential(response){
     callback: async (tokenResponse) => {
       if(tokenResponse.error){ setAuthStatus('Authorization failed: '+tokenResponse.error,'err'); return; }
       gAccessToken = tokenResponse.access_token;
+      scheduleTokenRefresh(); // auto-refresh before token expires
 
       const allowed = await checkWhitelist(gUserEmail);
       if(!allowed){
