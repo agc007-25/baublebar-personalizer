@@ -317,7 +317,7 @@ const CLIENT_REGISTRY = {
       font:      null,  // BaubleBar: font is fixed per template, not in spreadsheet
     },
     // Size values to accept from spreadsheet (lowercase substring match)
-    sizeFilter: ['kids', 'throw'],
+    sizeFilter: ['kids', 'throw', 'blanket'],
     templates: {
       // ── KIDS ──────────────────────────────────────────────────────────────
       'Spell It Out|Kids':{
@@ -566,7 +566,17 @@ function handleXlsx(file){
       document.getElementById('xlsxPills').innerHTML=
         `<div class="pill"><span class="pdot ok"></span>${file.name} — ${orders.length} orders</div>`;
       window.spreadsheetBaseName=file.name.replace(/\.[^.]+$/,'');
+      // Pre-flag orders with no matching template as skipped
+      results=[];
+      orders.forEach((o,i)=>{
+        if(!getTemplate(o)) results[i]={status:'skipped'};
+      });
       log(`Loaded ${orders.length} orders from ${file.name}`,'ok');
+      const preSkipped=results.filter(r=>r&&r.status==='skipped').length;
+      if(preSkipped){
+        const exStyle=orders.find((_,i)=>results[i]&&results[i].status==='skipped').style;
+        log(`${preSkipped} order${preSkipped!==1?'s':''} have no matching template (e.g. "${exStyle}") — will be skipped`,'warn');
+      }
       renderTable();updateStats();checkReady();
     }catch(err){log(`Spreadsheet error: ${err.message}`,'err');}
   };
@@ -657,10 +667,15 @@ function renderTable(){
       document.getElementById('tableMeta').textContent=`${orders.length} orders`;
   document.getElementById('tableContainer').innerHTML=`
     <table><thead><tr><th>Order #</th><th>Name</th><th>Style</th><th>Size</th><th>Status</th><th>Note</th></tr></thead>
-    <tbody>${orders.map((o,i)=>`<tr><td>${o.orderNum}</td><td>${o.name}</td><td>${o.style}</td>
+    <tbody>${orders.map((o,i)=>{
+      const preSkip=results[i]&&results[i].status==='skipped';
+      const badge=preSkip?`<span class="sbadge skipped" id="st_${i}"><span class="sdot"></span>SKIPPED</span>`:`<span class="sbadge pending" id="st_${i}"><span class="sdot"></span>PENDING</span>`;
+      const note=preSkip?'no template':'';
+      return `<tr><td>${o.orderNum}</td><td>${o.name}</td><td>${o.style}</td>
       <td><span style="font-size:9px;color:var(--muted)">${o.size}</span></td>
-      <td><span class="sbadge pending" id="st_${i}"><span class="sdot"></span>PENDING</span></td>
-      <td style="font-size:9px;color:var(--muted)" id="note_${i}"></td></tr>`).join('')}</tbody></table>`;
+      <td>${badge}</td>
+      <td style="font-size:9px;color:var(--muted)" id="note_${i}">${note}</td></tr>`;
+    }).join('')}</tbody></table>`;
 }
 
 function setRow(i,s,n=''){
