@@ -219,13 +219,13 @@ tr:hover td{background:rgba(0,0,0,.03);}
   • CLIENT_REGISTRY[client].driveFolder — the Drive subfolder ID for each client
 </div>
 <div class="tabs">
-  <div class="tab" onclick="switchTab('process')">PROCESS ORDERS</div>
+  <div class="tab active" onclick="switchTab('process')">PROCESS ORDERS</div>
   <div class="tab" onclick="switchTab('calibrate')">ADD NEW TEMPLATE</div>
-  <div class="tab active" onclick="promptAdminLogin()">⚙ ADMIN</div>
+  <div class="tab" onclick="promptAdminLogin()">⚙ ADMIN</div>
 </div>
 
 <!-- ── PROCESS TAB ── -->
-<div class="tab-content" id="tab-process">
+<div class="tab-content active" id="tab-process">
   <div class="sidebar">
     <div class="section">
       <div class="sec-label"><span style="display:flex;align-items:center;gap:6px"><span class="step">1</span>ORDER SPREADSHEET</span></div>
@@ -1697,7 +1697,7 @@ async function syncFromDrive(){
 </div>
 
 <!-- ── ADMIN TAB ── -->
-<div class="tab-content active" id="tab-admin">
+<div class="tab-content" id="tab-admin">
   <div class="admin-hdr">
     TEMPLATE CALIBRATION
     <select class="admin-client-sel" id="adminClientSel" onchange="renderAdminPanel()"><option value="BaubleBar">BaubleBar</option><option value="In2Green">In2Green</option></select>
