@@ -1923,7 +1923,6 @@ function applyParamChange(input){
 }
 
 function exportAdminHtml(){
-  // Build override map from live CLIENT_REGISTRY
   const overrides = {};
   Object.entries(CLIENT_REGISTRY).forEach(([ck, client])=>{
     overrides[ck] = {};
@@ -1939,247 +1938,32 @@ function exportAdminHtml(){
   });
 
   const ts = new Date().toISOString().slice(0,16).replace('T',' ');
-  const overrideScript = `<script>\n// ADMIN OVERRIDES — generated ${ts}\n(function(){\n  const OV=${JSON.stringify(overrides,null,2)};\n  Object.entries(OV).forEach(([ck,tmpls])=>{\n    if(!CLIENT_REGISTRY[ck]) return;\n    Object.entries(tmpls).forEach(([tk,zones])=>{\n      const t=CLIENT_REGISTRY[ck].templates[tk];\n      if(!t) return;\n      zones.forEach((zov,zi)=>{\n        if(!t.zones[zi]) return;\n        Object.assign(t.zones[zi], zov);\n      });\n    });\n  });\n})();\n<\/script>`;
+  const ovJSON = JSON.stringify(overrides, null, 2);
+  const overrideBlock = [
+    '<scr'+'ipt>',
+    '// ADMIN OVERRIDES — generated ' + ts,
+    '(function(){',
+    '  const OV=' + ovJSON + ';',
+    '  Object.entries(OV).forEach(([ck,tmpls])=>{',
+    '    if(!CLIENT_REGISTRY[ck]) return;',
+    '    Object.entries(tmpls).forEach(([tk,zones])=>{',
+    '      const t=CLIENT_REGISTRY[ck].templates[tk];',
+    '      if(!t) return;',
+    '      zones.forEach((zov,zi)=>{',
+    '        if(!t.zones[zi]) return;',
+    '        Object.assign(t.zones[zi], zov);',
+    '      });',
+    '    });',
+    '  });',
+    '})();',
+    '</'+'script>'
+  ].join('\n');
 
-  // Fetch the original source HTML of this page
   fetch(location.href)
     .then(r=>r.text())
     .then(html=>{
-      // Strip any previous ADMIN OVERRIDES script block
       html = html.replace(/<script>\s*\/\/ ADMIN OVERRIDES[\s\S]*?<\/script>/,'');
-      // Inject new override script just before <script>
-// ADMIN OVERRIDES — generated 2026-04-28 18:47
-(function(){
-  const OV={
-  "BaubleBar": {
-    "Spell It Out|Kids": [
-      {
-        "cx": 164,
-        "cy": 199,
-        "w": 246,
-        "h": 84
-      }
-    ],
-    "Down The Line|Kids": [
-      {
-        "cx": 131,
-        "cy": 179,
-        "w": 330,
-        "h": 72,
-        "rightEdge": 164
-      }
-    ],
-    "Subtly Scalloped|Kids": [
-      {
-        "cx": 164,
-        "cy": 178,
-        "w": 266,
-        "h": 170,
-        "forceSize": 55,
-        "hCrop": 160
-      }
-    ],
-    "Wild at Heart|Kids": [
-      {
-        "cx": 161,
-        "cy": 171,
-        "w": 157,
-        "h": 27
-      }
-    ],
-    "Wild Child|Kids": [
-      {
-        "cx": 170,
-        "cy": 64,
-        "w": 135,
-        "h": 23,
-        "forceMin": 16
-      },
-      {
-        "cx": 138,
-        "cy": 233,
-        "w": 135,
-        "h": 26,
-        "forceMin": 16
-      },
-      {
-        "cx": 246,
-        "cy": 165,
-        "w": 135,
-        "h": 24,
-        "forceMin": 16
-      },
-      {
-        "cx": 153,
-        "cy": 324,
-        "w": 134,
-        "h": 22,
-        "forceMin": 16
-      }
-    ],
-    "Play Date|Kids": [
-      {
-        "cx": 160,
-        "cy": 58,
-        "w": 82,
-        "h": 24,
-        "forceSize": 24
-      },
-      {
-        "cx": 245,
-        "cy": 158,
-        "w": 82,
-        "h": 24,
-        "forceSize": 24
-      },
-      {
-        "cx": 108,
-        "cy": 204,
-        "w": 81,
-        "h": 31,
-        "forceSize": 24
-      },
-      {
-        "cx": 149,
-        "cy": 324,
-        "w": 82,
-        "h": 22,
-        "forceSize": 24
-      }
-    ],
-    "Sweet Tooth|Kids": [
-      {
-        "cx": 233,
-        "cy": 60,
-        "w": 160,
-        "h": 24
-      },
-      {
-        "cx": 92,
-        "cy": 169,
-        "w": 161,
-        "h": 25
-      },
-      {
-        "cx": 216,
-        "cy": 300,
-        "w": 160,
-        "h": 24
-      }
-    ],
-    "Spell It Out|Throw": [
-      {
-        "cx": 179,
-        "cy": 263,
-        "w": 330,
-        "h": 60
-      }
-    ],
-    "Down The Line|Throw": [
-      {
-        "cx": 149,
-        "cy": 252,
-        "w": 451,
-        "h": 80,
-        "forceMin": 60,
-        "rightEdge": 179
-      }
-    ],
-    "Subtly Scalloped|Throw": [
-      {
-        "cx": 178,
-        "cy": 256,
-        "w": 326,
-        "h": 112,
-        "forceSize": 55,
-        "hCrop": 130
-      }
-    ],
-    "Wild at Heart|Throw": [
-      {
-        "cx": 179,
-        "cy": 233,
-        "w": 170,
-        "h": 25
-      }
-    ],
-    "Spell It Out|Blanket": [
-      {
-        "cx": 282,
-        "cy": 362,
-        "w": 490,
-        "h": 114
-      }
-    ],
-    "Wild at Heart|Blanket": [
-      {
-        "cx": 274,
-        "cy": 315,
-        "w": 268,
-        "h": 50
-      }
-    ],
-    "Subtly Scalloped|Blanket": [
-      {
-        "cx": 276,
-        "cy": 320,
-        "w": 494,
-        "h": 200,
-        "forceSize": 72,
-        "hCrop": 200
-      }
-    ]
-  },
-  "In2Green": {
-    "Baby Farm": [
-      {
-        "cx": 139,
-        "cy": 339,
-        "w": 179,
-        "h": 35
-      }
-    ],
-    "Baby Happy Camper": [
-      {
-        "cx": 320,
-        "cy": 250,
-        "w": 176,
-        "h": 42
-      }
-    ],
-    "Baby Herringbone": [
-      {
-        "cx": 153,
-        "cy": 296,
-        "w": 123,
-        "h": 29
-      }
-    ],
-    "Herringbone Stripe": [
-      {
-        "cx": 56,
-        "cy": 468,
-        "w": 172,
-        "h": 31
-      }
-    ]
-  }
-};
-  Object.entries(OV).forEach(([ck,tmpls])=>{
-    if(!CLIENT_REGISTRY[ck]) return;
-    Object.entries(tmpls).forEach(([tk,zones])=>{
-      const t=CLIENT_REGISTRY[ck].templates[tk];
-      if(!t) return;
-      zones.forEach((zov,zi)=>{
-        if(!t.zones[zi]) return;
-        Object.assign(t.zones[zi], zov);
-      });
-    });
-  });
-})();
-</script>
-</body>
-      html = html.replace('</body>', overrideScript + '\n</body>');
+      html = html.replace('</body>', overrideBlock + '\n</body>');
       const blob = new Blob([html],{type:'text/html'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
