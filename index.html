@@ -140,6 +140,7 @@ tr:hover td{background:rgba(0,0,0,.03);}
 
 /* ── ADMIN PANEL ── */
 #adminOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;}
+#adminOverlay.open{display:flex;}
 #adminBox{background:var(--surface);border:2px solid var(--accent);border-radius:4px;padding:28px 32px;width:340px;display:flex;flex-direction:column;gap:14px;}
 #adminBox h2{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;}
 #adminPwInput{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:3px;font-family:'DM Mono',monospace;font-size:13px;background:var(--surface2);}
@@ -392,17 +393,31 @@ const CLIENT_REGISTRY = {
       'Wild Child|Kids':{
         psd:'Wild_Child_KIDS_blank.bmp',
         palette:[[0,0,0],[118,116,115],[194,195,195],[255,255,255]],
-        zones:[{font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:170,cy:64,w:135,h:23,angle:-38.5,color:[194,195,195,255],mode:'diag',uppercase:true,forceMin:16},{font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:138,cy:233,w:135,h:26,angle:56.2,color:[194,195,195,255],mode:'diag',uppercase:true,forceMin:16,flip:true},{font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:246,cy:165,w:135,h:24,angle:29.6,color:[0,0,0,255],mode:'diag',uppercase:true,forceMin:16},{font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:153,cy:324,w:134,h:22,angle:-8,color:[0,0,0,255],mode:'diag',uppercase:true,forceMin:16}]
+        zones:[
+          {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:170,cy:64, w:135,h:23,angle:-38.5,color:[194,195,195,255],mode:'diag',uppercase:true,forceMin:16},
+          {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:138,cy:233,w:135,h:26,angle:56.2, color:[194,195,195,255],mode:'diag',uppercase:true,forceMin:16,flip:true},
+          {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:246,cy:165,w:135,h:24,angle:29.6, color:[0,0,0,255],      mode:'diag',uppercase:true,forceMin:16},
+          {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:153,cy:324,w:134,h:22,angle:-8.0, color:[0,0,0,255],      mode:'diag',uppercase:true,forceMin:16}
+        ]
       },
       'Play Date|Kids':{
         psd:'Play_Date_KIDS_blank.bmp',
         palette:[[0,0,0],[139,139,138],[189,190,190],[255,255,255]],
-        zones:[{font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:160,cy:58,w:82,h:24,angle:-33.4,color:[189,190,190,255],mode:'diag',uppercase:true,forceSize:24},{font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:245,cy:158,w:82,h:24,angle:33.4,color:[139,139,138,255],mode:'diag',uppercase:true,forceSize:24},{font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:108,cy:204,w:81,h:31,angle:60.8,color:[189,190,190,255],mode:'diag',uppercase:true,forceSize:24,flip:true},{font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:149,cy:324,w:82,h:22,angle:-9.4,color:[139,139,138,255],mode:'diag',uppercase:true,forceSize:24}]
+        zones:[
+          {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:160,cy:58, w:82,h:24,angle:-33.4,color:[189,190,190,255],mode:'diag',uppercase:true,forceSize:24},
+          {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:245,cy:158,w:82,h:24,angle:33.4, color:[139,139,138,255],mode:'diag',uppercase:true,forceSize:24},
+          {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:108,cy:204,w:81,h:31,angle:60.8, color:[189,190,190,255],mode:'diag',uppercase:true,forceSize:24,flip:true},
+          {font:'SPONGY_PERSONAL_USE_ONLY.OTF',cx:149,cy:324,w:82,h:22,angle:-9.4, color:[139,139,138,255],mode:'diag',uppercase:true,forceSize:24}
+        ]
       },
       'Sweet Tooth|Kids':{
         psd:'SweetTooth_KIDS_blank.bmp',
         palette:[[0,0,0],[137,136,135],[199,198,199],[255,255,255]],
-        zones:[{font:'KEEPONTRUCKIN.TTF',cx:233,cy:60,w:160,h:24,angle:30,color:[137,136,135,255],mode:'diag',uppercase:true},{font:'KEEPONTRUCKIN.TTF',cx:92,cy:169,w:161,h:25,angle:-25.8,color:[0,0,0,255],mode:'diag',uppercase:true},{font:'KEEPONTRUCKIN.TTF',cx:216,cy:300,w:160,h:24,angle:16.1,color:[137,136,135,255],mode:'diag',uppercase:true}]
+        zones:[
+          {font:'KEEPONTRUCKIN.TTF',cx:233,cy:60, w:160,h:24,angle:30.0, color:[137,136,135,255],mode:'diag',uppercase:true},
+          {font:'KEEPONTRUCKIN.TTF',cx:92, cy:169,w:161,h:25,angle:-25.8,color:[0,0,0,255],      mode:'diag',uppercase:true},
+          {font:'KEEPONTRUCKIN.TTF',cx:216,cy:300,w:160,h:24,angle:16.1, color:[137,136,135,255],mode:'diag',uppercase:true}
+        ]
       },
       // ── THROW ─────────────────────────────────────────────────────────────
       'Spell It Out|Throw':{
@@ -413,7 +428,7 @@ const CLIENT_REGISTRY = {
       'Down The Line|Throw':{
         psd:'down_the_line_throw.bmp',
         palette:[[0,0,0],[155,155,155],[230,230,229],[255,255,255]],
-        zones:[{font:'SORIA-BOLD.OTF',cx:149,cy:252,w:451,h:80,angle:-90,color:[0,0,0,255],mode:'right',forceMin:60,rightEdge:179}]
+        zones:[{font:'SORIA-BOLD.OTF',cx:149,cy:252,w:451,h:80,angle:-90,color:[0,0,0,255],mode:'right',rightEdge:179,forceMin:60}]
       },
       'Subtly Scalloped|Throw':{
         psd:'Subtly_Scalloped_Small.bmp',
@@ -1669,7 +1684,7 @@ async function syncFromDrive(){
 </script>
 
 <!-- ── ADMIN PASSWORD OVERLAY ── -->
-<div id="adminOverlay">
+<div id="adminOverlay" class="">
   <div id="adminBox">
     <h2>ADMIN ACCESS</h2>
     <input type="password" id="adminPwInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkAdminPw()">
@@ -1687,112 +1702,7 @@ async function syncFromDrive(){
     TEMPLATE CALIBRATION
     <select class="admin-client-sel" id="adminClientSel" onchange="renderAdminPanel()"><option value="BaubleBar">BaubleBar</option><option value="In2Green">In2Green</option></select>
   </div>
-  <div id="adminCards"><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Spell It Out|Kids</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="164" data-client="BaubleBar" data-key="Spell It Out|Kids" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="195" data-client="BaubleBar" data-key="Spell It Out|Kids" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="246" data-client="BaubleBar" data-key="Spell It Out|Kids" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="84" data-client="BaubleBar" data-key="Spell It Out|Kids" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Down The Line|Kids</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="131" data-client="BaubleBar" data-key="Down The Line|Kids" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="179" data-client="BaubleBar" data-key="Down The Line|Kids" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="330" data-client="BaubleBar" data-key="Down The Line|Kids" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="72" data-client="BaubleBar" data-key="Down The Line|Kids" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">rightEdge</span>
-          <input class="param-input" type="number" value="164" data-client="BaubleBar" data-key="Down The Line|Kids" data-zone="0" data-field="rightEdge" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Subtly Scalloped|Kids</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body open"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="159" data-client="BaubleBar" data-key="Subtly Scalloped|Kids" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="168" data-client="BaubleBar" data-key="Subtly Scalloped|Kids" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="266" data-client="BaubleBar" data-key="Subtly Scalloped|Kids" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="170" data-client="BaubleBar" data-key="Subtly Scalloped|Kids" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceSize (lock font px)</span>
-          <input class="param-input" type="number" value="55" data-client="BaubleBar" data-key="Subtly Scalloped|Kids" data-zone="0" data-field="forceSize" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">hCrop</span>
-          <input class="param-input" type="number" value="160" data-client="BaubleBar" data-key="Subtly Scalloped|Kids" data-zone="0" data-field="hCrop" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Wild at Heart|Kids</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="161" data-client="BaubleBar" data-key="Wild at Heart|Kids" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="171" data-client="BaubleBar" data-key="Wild at Heart|Kids" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="157" data-client="BaubleBar" data-key="Wild at Heart|Kids" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="27" data-client="BaubleBar" data-key="Wild at Heart|Kids" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Wild Child|Kids</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="170" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="64" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="135" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="23" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceMin (min font px)</span>
-          <input class="param-input" type="number" value="16" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="0" data-field="forceMin" onchange="applyParamChange(this)"></div><hr class="zone-divider"><div style="width: 100%; font-family: &quot;DM Mono&quot;, monospace; font-size: 9px; color: var(--muted);">ZONE 2</div><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="138" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="1" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="233" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="1" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="135" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="1" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="26" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="1" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceMin (min font px)</span>
-          <input class="param-input" type="number" value="16" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="1" data-field="forceMin" onchange="applyParamChange(this)"></div><hr class="zone-divider"><div style="width: 100%; font-family: &quot;DM Mono&quot;, monospace; font-size: 9px; color: var(--muted);">ZONE 3</div><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="246" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="2" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="165" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="2" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="135" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="2" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="24" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="2" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceMin (min font px)</span>
-          <input class="param-input" type="number" value="16" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="2" data-field="forceMin" onchange="applyParamChange(this)"></div><hr class="zone-divider"><div style="width: 100%; font-family: &quot;DM Mono&quot;, monospace; font-size: 9px; color: var(--muted);">ZONE 4</div><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="153" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="3" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="324" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="3" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="134" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="3" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="22" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="3" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceMin (min font px)</span>
-          <input class="param-input" type="number" value="16" data-client="BaubleBar" data-key="Wild Child|Kids" data-zone="3" data-field="forceMin" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Play Date|Kids</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="160" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="58" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="82" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="24" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceSize (lock font px)</span>
-          <input class="param-input" type="number" value="24" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="0" data-field="forceSize" onchange="applyParamChange(this)"></div><hr class="zone-divider"><div style="width: 100%; font-family: &quot;DM Mono&quot;, monospace; font-size: 9px; color: var(--muted);">ZONE 2</div><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="245" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="1" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="158" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="1" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="82" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="1" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="24" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="1" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceSize (lock font px)</span>
-          <input class="param-input" type="number" value="24" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="1" data-field="forceSize" onchange="applyParamChange(this)"></div><hr class="zone-divider"><div style="width: 100%; font-family: &quot;DM Mono&quot;, monospace; font-size: 9px; color: var(--muted);">ZONE 3</div><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="108" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="2" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="204" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="2" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="81" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="2" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="31" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="2" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceSize (lock font px)</span>
-          <input class="param-input" type="number" value="24" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="2" data-field="forceSize" onchange="applyParamChange(this)"></div><hr class="zone-divider"><div style="width: 100%; font-family: &quot;DM Mono&quot;, monospace; font-size: 9px; color: var(--muted);">ZONE 4</div><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="149" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="3" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="324" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="3" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="82" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="3" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="22" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="3" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceSize (lock font px)</span>
-          <input class="param-input" type="number" value="24" data-client="BaubleBar" data-key="Play Date|Kids" data-zone="3" data-field="forceSize" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Sweet Tooth|Kids</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="233" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="60" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="160" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="24" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div><hr class="zone-divider"><div style="width: 100%; font-family: &quot;DM Mono&quot;, monospace; font-size: 9px; color: var(--muted);">ZONE 2</div><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="92" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="1" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="169" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="1" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="161" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="1" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="25" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="1" data-field="h" onchange="applyParamChange(this)"></div><hr class="zone-divider"><div style="width: 100%; font-family: &quot;DM Mono&quot;, monospace; font-size: 9px; color: var(--muted);">ZONE 3</div><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="216" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="2" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="300" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="2" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="160" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="2" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="24" data-client="BaubleBar" data-key="Sweet Tooth|Kids" data-zone="2" data-field="h" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Spell It Out|Throw</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="179" data-client="BaubleBar" data-key="Spell It Out|Throw" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="263" data-client="BaubleBar" data-key="Spell It Out|Throw" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="330" data-client="BaubleBar" data-key="Spell It Out|Throw" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="60" data-client="BaubleBar" data-key="Spell It Out|Throw" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Down The Line|Throw</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="149" data-client="BaubleBar" data-key="Down The Line|Throw" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="252" data-client="BaubleBar" data-key="Down The Line|Throw" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="451" data-client="BaubleBar" data-key="Down The Line|Throw" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="80" data-client="BaubleBar" data-key="Down The Line|Throw" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceMin (min font px)</span>
-          <input class="param-input" type="number" value="60" data-client="BaubleBar" data-key="Down The Line|Throw" data-zone="0" data-field="forceMin" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">rightEdge</span>
-          <input class="param-input" type="number" value="179" data-client="BaubleBar" data-key="Down The Line|Throw" data-zone="0" data-field="rightEdge" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Subtly Scalloped|Throw</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body open"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="178" data-client="BaubleBar" data-key="Subtly Scalloped|Throw" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="246" data-client="BaubleBar" data-key="Subtly Scalloped|Throw" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="326" data-client="BaubleBar" data-key="Subtly Scalloped|Throw" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="112" data-client="BaubleBar" data-key="Subtly Scalloped|Throw" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceSize (lock font px)</span>
-          <input class="param-input" type="number" value="55" data-client="BaubleBar" data-key="Subtly Scalloped|Throw" data-zone="0" data-field="forceSize" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">hCrop</span>
-          <input class="param-input" type="number" value="130" data-client="BaubleBar" data-key="Subtly Scalloped|Throw" data-zone="0" data-field="hCrop" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Wild at Heart|Throw</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="179" data-client="BaubleBar" data-key="Wild at Heart|Throw" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="233" data-client="BaubleBar" data-key="Wild at Heart|Throw" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="170" data-client="BaubleBar" data-key="Wild at Heart|Throw" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="25" data-client="BaubleBar" data-key="Wild at Heart|Throw" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Spell It Out|Blanket</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="282" data-client="BaubleBar" data-key="Spell It Out|Blanket" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="362" data-client="BaubleBar" data-key="Spell It Out|Blanket" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="490" data-client="BaubleBar" data-key="Spell It Out|Blanket" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="114" data-client="BaubleBar" data-key="Spell It Out|Blanket" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Wild at Heart|Blanket</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="274" data-client="BaubleBar" data-key="Wild at Heart|Blanket" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="315" data-client="BaubleBar" data-key="Wild at Heart|Blanket" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="268" data-client="BaubleBar" data-key="Wild at Heart|Blanket" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="50" data-client="BaubleBar" data-key="Wild at Heart|Blanket" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div></div></div><div class="tmpl-card"><div class="tmpl-card-hdr"><span>Subtly Scalloped|Blanket</span><span style="font-size:10px;color:var(--muted)">▼</span></div><div class="tmpl-card-body open"><div class="param-group"><span class="param-label">CX</span>
-          <input class="param-input" type="number" value="276" data-client="BaubleBar" data-key="Subtly Scalloped|Blanket" data-zone="0" data-field="cx" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">CY</span>
-          <input class="param-input" type="number" value="320" data-client="BaubleBar" data-key="Subtly Scalloped|Blanket" data-zone="0" data-field="cy" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">W (max width)</span>
-          <input class="param-input" type="number" value="494" data-client="BaubleBar" data-key="Subtly Scalloped|Blanket" data-zone="0" data-field="w" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">H (max height)</span>
-          <input class="param-input" type="number" value="200" data-client="BaubleBar" data-key="Subtly Scalloped|Blanket" data-zone="0" data-field="h" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">forceSize (lock font px)</span>
-          <input class="param-input" type="number" value="72" data-client="BaubleBar" data-key="Subtly Scalloped|Blanket" data-zone="0" data-field="forceSize" onchange="applyParamChange(this)"></div><div class="param-group"><span class="param-label">hCrop</span>
-          <input class="param-input" type="number" value="200" data-client="BaubleBar" data-key="Subtly Scalloped|Blanket" data-zone="0" data-field="hCrop" onchange="applyParamChange(this)"></div></div></div></div>
+  <div id="adminCards"></div>
   <div style="display:flex;align-items:center;gap:16px;margin-top:8px;">
     <button class="export-btn" onclick="exportAdminHtml()">⬇ EXPORT UPDATED index.html</button>
     <span class="admin-note">Push the exported file to GitHub to go live.</span>
@@ -1807,16 +1717,15 @@ const ADMIN_PASSWORD = 'knit2025';
 let adminUnlocked = false;
 
 function promptAdminLogin(){
-  alert('admin clicked');
   if(adminUnlocked){ switchTab('admin'); return; }
-  document.getElementById('adminOverlay').style.display='flex';
+  document.getElementById('adminOverlay').classList.add('open');
   document.getElementById('adminPwInput').value='';
   document.getElementById('adminPwErr').style.display='none';
   setTimeout(()=>document.getElementById('adminPwInput').focus(),100);
 }
 
 function closeAdminOverlay(){
-  document.getElementById('adminOverlay').style.display='none';
+  document.getElementById('adminOverlay').classList.remove('open');
 }
 
 function checkAdminPw(){
@@ -1842,9 +1751,8 @@ function populateAdminClientSel(){
 
 function renderAdminPanel(){
   const sel = document.getElementById('adminClientSel');
-  const clientKey = sel.value || Object.keys(CLIENT_REGISTRY)[0];
+  const clientKey = sel.value;
   if(!clientKey) return;
-  sel.value = clientKey;
   const templates = CLIENT_REGISTRY[clientKey].templates;
   const container = document.getElementById('adminCards');
   container.innerHTML = '';
@@ -1913,33 +1821,19 @@ function exportAdminHtml(){
   fetch(location.href)
     .then(r=>r.text())
     .then(html=>{
-      // Strip any previous patch block
-      html = html.replace(//,'');
-
-      // For each template, find its zones:[...] line in source and replace with live values
+      // For each template, rewrite zones:[...] directly in source
       Object.entries(CLIENT_REGISTRY).forEach(([ck, client])=>{
         Object.entries(client.templates).forEach(([tk, tmpl])=>{
-          // Find the block for this template key in the source
           const keyStr = "'" + tk + "':{";
           const keyIdx = html.indexOf(keyStr);
           if(keyIdx === -1) return;
-
-          // Find zones:[ start after the key
           const zonesIdx = html.indexOf('zones:[', keyIdx);
           if(zonesIdx === -1) return;
-
-          // Find the closing ] of zones array — handle nested brackets
-          let depth = 0, i = zonesIdx + 7; // skip 'zones:['
+          let depth = 0, i = zonesIdx + 7;
           for(; i < html.length; i++){
             if(html[i] === '[') depth++;
-            else if(html[i] === ']'){
-              if(depth === 0) break;
-              depth--;
-            }
+            else if(html[i] === ']'){ if(depth === 0) break; depth--; }
           }
-          const oldZones = html.slice(zonesIdx, i+1);
-
-          // Serialize live zones back to JS syntax
           const newZonesArr = tmpl.zones.map(z=>{
             const parts = [];
             parts.push("font:'" + z.font + "'");
@@ -1960,11 +1854,9 @@ function exportAdminHtml(){
             return '{' + parts.join(',') + '}';
           });
           const newZones = 'zones:[' + newZonesArr.join(',') + ']';
-
           html = html.slice(0, zonesIdx) + newZones + html.slice(i+1);
         });
       });
-
       const blob = new Blob([html],{type:'text/html'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
