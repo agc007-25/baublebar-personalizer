@@ -1923,52 +1923,61 @@ function applyParamChange(input){
 }
 
 function exportAdminHtml(){
-  // Collect all current numeric zone values from live CLIENT_REGISTRY
-  const patches = {};
-  Object.entries(CLIENT_REGISTRY).forEach(([ck, client])=>{
-    patches[ck] = {};
-    Object.entries(client.templates).forEach(([tk, tmpl])=>{
-      patches[ck][tk] = tmpl.zones.map(z=>({
-        cx:z.cx, cy:z.cy, w:z.w, h:z.h,
-        ...(z.forceSize  !== undefined && {forceSize:z.forceSize}),
-        ...(z.forceMin   !== undefined && {forceMin:z.forceMin}),
-        ...(z.rightEdge  !== undefined && {rightEdge:z.rightEdge}),
-        ...(z.hCrop      !== undefined && {hCrop:z.hCrop}),
-        ...(z.hCropBias  !== undefined && {hCropBias:z.hCropBias}),
-      }));
-    });
-  });
-
   fetch(location.href)
     .then(r=>r.text())
     .then(html=>{
-      // Remove any previous patch block
+      // Strip any previous patch block
       html = html.replace(/<!--ADMIN_PATCH_START-->[\s\S]*?<!--ADMIN_PATCH_END-->/,'');
 
-      const patchScript = [
-        '<!--ADMIN_PATCH_START-->',
-        '<script>',
-        '(function(){',
-        '  var P=' + JSON.stringify(patches) + ';',
-        '  Object.entries(P).forEach(function(ce){',
-        '    var ck=ce[0], tmpls=ce[1];',
-        '    if(!CLIENT_REGISTRY[ck]) return;',
-        '    Object.entries(tmpls).forEach(function(te){',
-        '      var tk=te[0], zones=te[1];',
-        '      var t=CLIENT_REGISTRY[ck].templates[tk];',
-        '      if(!t) return;',
-        '      zones.forEach(function(zov,zi){',
-        '        if(t.zones[zi]) Object.assign(t.zones[zi],zov);',
-        '      });',
-        '    });',
-        '  });',
-        '})();',
-        '<\/script>',
-        '<!--ADMIN_PATCH_END-->'
-      ].join('\n');
+      // For each template, find its zones:[...] line in source and replace with live values
+      Object.entries(CLIENT_REGISTRY).forEach(([ck, client])=>{
+        Object.entries(client.templates).forEach(([tk, tmpl])=>{
+          // Find the block for this template key in the source
+          const keyStr = "'" + tk + "':{";
+          const keyIdx = html.indexOf(keyStr);
+          if(keyIdx === -1) return;
 
-      // Inject just before </body>
-      html = html.replace('<\/body>', patchScript + '\n<\/body>');
+          // Find zones:[ start after the key
+          const zonesIdx = html.indexOf('zones:[', keyIdx);
+          if(zonesIdx === -1) return;
+
+          // Find the closing ] of zones array — handle nested brackets
+          let depth = 0, i = zonesIdx + 7; // skip 'zones:['
+          for(; i < html.length; i++){
+            if(html[i] === '[') depth++;
+            else if(html[i] === ']'){
+              if(depth === 0) break;
+              depth--;
+            }
+          }
+          const oldZones = html.slice(zonesIdx, i+1);
+
+          // Serialize live zones back to JS syntax
+          const newZonesArr = tmpl.zones.map(z=>{
+            const parts = [];
+            parts.push("font:'" + z.font + "'");
+            parts.push('cx:' + z.cx);
+            parts.push('cy:' + z.cy);
+            parts.push('w:' + z.w);
+            parts.push('h:' + z.h);
+            if(z.hCrop      !== undefined) parts.push('hCrop:'     + z.hCrop);
+            if(z.hCropBias  !== undefined) parts.push('hCropBias:' + z.hCropBias);
+            parts.push('angle:' + z.angle);
+            parts.push('color:[' + z.color.join(',') + ']');
+            parts.push("mode:'" + z.mode + "'");
+            if(z.uppercase  !== undefined) parts.push('uppercase:' + z.uppercase);
+            if(z.forceSize  !== undefined) parts.push('forceSize:' + z.forceSize);
+            if(z.forceMin   !== undefined) parts.push('forceMin:'  + z.forceMin);
+            if(z.rightEdge  !== undefined) parts.push('rightEdge:' + z.rightEdge);
+            if(z.flip       !== undefined) parts.push('flip:'      + z.flip);
+            return '{' + parts.join(',') + '}';
+          });
+          const newZones = 'zones:[' + newZonesArr.join(',\n          ') + ']';
+
+          html = html.slice(0, zonesIdx) + newZones + html.slice(i+1);
+        });
+      });
+
       const blob = new Blob([html],{type:'text/html'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
