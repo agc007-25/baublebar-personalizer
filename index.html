@@ -364,7 +364,7 @@ const CLIENT_REGISTRY = {
       'Subtly Scalloped|Kids':{
         psd:'Subtly_Scalloped_Kids_blank.bmp',
         palette:[[255,255,255],[207,207,207],[115,115,115],[0,0,0]],
-        zones:[{font:'ETERNATE_BOLD.OTF',cx:159,cy:168,w:266,h:170,hCrop:160,angle:0,color:[0,0,0,255],mode:'midbody'}]
+        zones:[{font:'ETERNATE_BOLD.OTF',cx:159,cy:168,w:266,h:170,hCrop:160,angle:0,color:[0,0,0,255],mode:'midbody',forceSize:55}]
       },
       'Wild at Heart|Kids':{
         psd:'WILD_AT_HEART_KIDS_2_COLOR.bmp',
@@ -500,7 +500,7 @@ function dbClearAll(){return new Promise((res,rej)=>{const tx=db.transaction('fi
 // ─────────────────────────────────────────────────────────────────────────────
 // State
 // ─────────────────────────────────────────────────────────────────────────────
-let orders=[],psdFiles={},fontFaces={},results=[],canvasCache={};
+let orders=[],psdFiles={},fontFaces={},results=[];
 
 // Normalize a font name from the registry to match the storage key in fontFaces.
 // Handles both 'Adobe Garamond Pro Bold' and 'SORIA-BOLD.OTF' styles.
@@ -646,7 +646,7 @@ async function loadCache(){
 }
 
 async function clearCache(){
-  await dbClearAll();psdFiles={};fontFaces={};canvasCache={};renderFileStatus();log('Cache cleared','warn');checkReady();
+  await dbClearAll();psdFiles={};fontFaces={};renderFileStatus();log('Cache cleared','warn');checkReady();
 }
 
 function renderFileStatus(){
@@ -732,12 +732,12 @@ function checkReady(){
 // ─────────────────────────────────────────────────────────────────────────────
 // Template → Canvas (supports PSD and BMP)
 // ─────────────────────────────────────────────────────────────────────────────
-async function decodeToCanvas(buffer,filename){
-  // Decode buffer to a canvas — called once per unique blank, result is cached
+async function psdToCanvas(buffer,filename){
+  // If BMP (or any non-PSD): load via blob URL onto an Image, draw to canvas
   const ext=(filename||'').split('.').pop().toLowerCase();
   if(ext==='bmp'||ext==='png'||ext==='jpg'||ext==='jpeg'){
     return new Promise((resolve,reject)=>{
-      const blob=new Blob([buffer],{type:'image/'+(ext==='jpg'?'jpeg':ext)});
+      const blob=new Blob([buffer],{type:'image/'+( ext==='jpg'?'jpeg':ext )});
       const url=URL.createObjectURL(blob);
       const img=new Image();
       img.onload=()=>{
@@ -767,20 +767,6 @@ async function decodeToCanvas(buffer,filename){
     }
   }
   return canvas;
-}
-
-async function psdToCanvas(buffer,filename){
-  // Return a fresh clone of the cached canvas so each order gets its own clean copy
-  const key=filename.toLowerCase().replace(/\s+/g,'_');
-  if(!canvasCache[key]){
-    canvasCache[key]=await decodeToCanvas(buffer,filename);
-  }
-  // Clone the cached canvas
-  const src=canvasCache[key];
-  const clone=document.createElement('canvas');
-  clone.width=src.width;clone.height=src.height;
-  clone.getContext('2d').drawImage(src,0,0);
-  return clone;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1780,7 +1766,8 @@ function renderAdminPanel(){
         {label:'CY', field:'cy'},
         {label:'W (max width)', field:'w'},
         {label:'H (max height)', field:'h'},
-        {label:'forceMin', field:'forceMin'},
+        {label:'forceSize (lock font px)', field:'forceSize'},
+        {label:'forceMin (min font px)', field:'forceMin'},
         {label:'rightEdge', field:'rightEdge'},
         {label:'hCrop', field:'hCrop'},
       ];
@@ -1829,6 +1816,7 @@ function exportAdminHtml(){
     Object.entries(client.templates).forEach(([tk, tmpl])=>{
       overrides[ck][tk] = tmpl.zones.map(z=>({
         cx:z.cx, cy:z.cy, w:z.w, h:z.h,
+        ...(z.forceSize!==undefined&&{forceSize:z.forceSize}),
         ...(z.forceMin!==undefined&&{forceMin:z.forceMin}),
         ...(z.rightEdge!==undefined&&{rightEdge:z.rightEdge}),
         ...(z.hCrop!==undefined&&{hCrop:z.hCrop}),
