@@ -298,41 +298,107 @@ tr:hover td{background:rgba(0,0,0,.03);}
 
 <!-- ── CALIBRATE TAB ── -->
 <div class="tab-content" id="tab-calibrate">
-  <div class="cal-wrap">
-    <div class="cal-title">Add New Template</div>
-    <div class="cal-sub">
-      To add a new template style without needing help:<br>
-      1. Save the PSD with the text layer HIDDEN (blank template)<br>
-      2. Save a second PSD/TIF with a sample name filled in (finished example)<br>
-      3. Drop both files below + enter the style name and font<br>
-      4. Click Calibrate — the tool detects the zones automatically<br>
-      5. Copy the generated config and send it to your developer to add to the tool
-    </div>
-    <div class="cal-grid">
-      <div class="cal-drop" id="calBlankDrop" onclick="document.getElementById('calBlankInput').click()">
-        <input type="file" id="calBlankInput" accept=".psd,.bmp,.tif,.tiff" onchange="calLoadBlank(this.files[0])">
-        <div class="cd-icon">⬜</div>
-        <div class="cd-label">Blank Template</div>
-        <div class="cd-sub" id="calBlankName">PSD or BMP with text layer hidden</div>
+  <div style="display:flex;height:100%;overflow:hidden;">
+
+    <!-- LEFT: Controls -->
+    <div style="width:320px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:16px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;margin-bottom:12px;">LIVE PREVIEW</div>
+
+      <!-- BMP Upload -->
+      <div class="cal-drop" style="margin-bottom:12px;" id="prevBmpDrop" onclick="document.getElementById('prevBmpInput').click()">
+        <input type="file" id="prevBmpInput" accept=".bmp,.psd" onchange="prevLoadBmp(this.files[0])">
+        <div class="cd-icon">🖼</div>
+        <div class="cd-label">BLANK TEMPLATE</div>
+        <div class="cd-sub" id="prevBmpName">Drop BMP here</div>
       </div>
-      <div class="cal-drop" id="calFinishedDrop" onclick="document.getElementById('calFinishedInput').click()">
-        <input type="file" id="calFinishedInput" accept=".psd,.tif,.tiff" onchange="calLoadFinished(this.files[0])">
-        <div class="cd-icon">✅</div>
-        <div class="cd-label">Finished Example</div>
-        <div class="cd-sub" id="calFinishedName">PSD or TIF with sample name</div>
+
+      <!-- Test Name -->
+      <div class="field-group" style="margin-bottom:10px;">
+        <label>Test Name</label>
+        <input type="text" id="prevName" value="ELIZABETH" oninput="runPreview()" style="width:100%;">
+      </div>
+
+      <!-- Font -->
+      <div class="field-group" style="margin-bottom:10px;">
+        <label>Font</label>
+        <select id="prevFont" onchange="runPreview()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:2px;padding:6px 8px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;">
+          <option value="">— select font —</option>
+        </select>
+      </div>
+
+      <!-- CX / CY -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div class="field-group">
+          <label>CX</label>
+          <input type="number" id="prevCx" value="150" oninput="runPreview()" style="width:100%;">
+        </div>
+        <div class="field-group">
+          <label>CY</label>
+          <input type="number" id="prevCy" value="200" oninput="runPreview()" style="width:100%;">
+        </div>
+      </div>
+
+      <!-- W / H -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div class="field-group">
+          <label>W (max width)</label>
+          <input type="number" id="prevW" value="200" oninput="runPreview()" style="width:100%;">
+        </div>
+        <div class="field-group">
+          <label>H (max height)</label>
+          <input type="number" id="prevH" value="50" oninput="runPreview()" style="width:100%;">
+        </div>
+      </div>
+
+      <!-- Font Size -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div class="field-group">
+          <label>forceSize (lock)</label>
+          <input type="number" id="prevForceSize" placeholder="optional" oninput="runPreview()" style="width:100%;">
+        </div>
+        <div class="field-group">
+          <label>forceMin (floor)</label>
+          <input type="number" id="prevForceMin" placeholder="optional" oninput="runPreview()" style="width:100%;">
+        </div>
+      </div>
+
+      <!-- Angle -->
+      <div class="field-group" style="margin-bottom:10px;">
+        <label>Angle (degrees)</label>
+        <input type="number" id="prevAngle" value="0" oninput="runPreview()" style="width:100%;">
+      </div>
+
+      <!-- Color -->
+      <div class="field-group" style="margin-bottom:10px;">
+        <label>Text Color</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="color" id="prevColor" value="#000000" oninput="runPreview()" style="width:48px;height:32px;border:1px solid var(--border);border-radius:2px;cursor:pointer;">
+          <input type="text" id="prevColorHex" value="#000000" oninput="syncColorFromHex()" style="flex:1;font-family:'DM Mono',monospace;font-size:11px;padding:6px 8px;border:1px solid var(--border);border-radius:2px;background:var(--surface2);">
+        </div>
+      </div>
+
+      <!-- Uppercase toggle -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+        <input type="checkbox" id="prevUppercase" onchange="runPreview()" style="cursor:pointer;">
+        <label style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);cursor:pointer;" for="prevUppercase">UPPERCASE</label>
+      </div>
+
+      <!-- Copy Config -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:10px;margin-bottom:8px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;margin-bottom:6px;display:flex;justify-content:space-between;">
+          CONFIG OUTPUT
+          <button class="copy-btn" onclick="copyPrevConfig()">COPY</button>
+        </div>
+        <div id="prevConfig" style="font-family:'DM Mono',monospace;font-size:9px;line-height:1.6;color:var(--text);white-space:pre-wrap;"></div>
       </div>
     </div>
-    <div class="cal-fields">
-      <div class="field-group"><label>Style Name (must match spreadsheet)</label><input type="text" id="calStyleName" placeholder="e.g. Spell It Out"></div>
-      <div class="field-group"><label>Sample Name Used</label><input type="text" id="calSampleName" placeholder="e.g. REESE"></div>
-      <div class="field-group"><label>Font Filename</label><input type="text" id="calFontFile" placeholder="e.g. DEALERPLATE CALIFORNIA.TTF"></div>
+
+    <!-- RIGHT: Preview Canvas -->
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:24px;overflow:auto;">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:8px;" id="prevStatus">Upload a blank BMP to begin</div>
+      <canvas id="prevCanvas" style="max-width:100%;max-height:calc(100vh - 200px);border:1px solid var(--border);background:#fff;display:none;"></canvas>
     </div>
-    <button class="cal-btn" id="calBtn" onclick="runCalibration()" disabled="">CALIBRATE</button>
-    <div class="cal-result" id="calResult">
-      <button class="copy-btn" onclick="copyCalResult()">COPY</button>
-      <div class="cal-result-title">Generated Configuration</div>
-      <div class="cal-code" id="calCode"></div>
-    </div>
+
   </div>
 </div>
 
@@ -344,6 +410,12 @@ const GOOGLE_CONFIG = {
   CLIENT_ID:       '70048819950-0dp69iq6277cnrhffo0b1ffgr53bdk7h.apps.googleusercontent.com',
   WHITELIST_SHEET: '1CvUfLAUf-CvaVCK3MOol9tiKw7NDoIl62btyT_VxlSY',
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOCAL TEST MODE — set to true to bypass Google Sign-In for local testing
+// IMPORTANT: set back to false before pushing to GitHub
+// ─────────────────────────────────────────────────────────────────────────────
+const LOCAL_TEST_MODE = false;
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -490,8 +562,11 @@ const CLIENT_REGISTRY = {
       },
       'Baby Block Milestone':{
         psd:'Baby Block Milestone.bmp',
-        palette:[[255,255,255],[200,200,200],[100,100,100],[0,0,0]],
-        zones:[{font:'ARIALBI',cx:152,cy:18,w:300,h:50,angle:0.0,color:[255,255,255,255],mode:'fit',uppercase:true,forceMin:22}]
+        palette:[[255,255,255],[214,214,214],[145,146,145],[0,0,0]],
+        zones:[
+          {font:'ARIALBI',cx:150,cy:20,w:99,h:14,angle:0.0,color:[0,0,0,255],mode:'fit',uppercase:true,forceMin:8},
+          {font:'ARIALBI',cx:150,cy:333,w:125,h:14,angle:0.0,color:[0,0,0,255],mode:'fit',uppercase:true,forceMin:8}
+        ]
       },
       'Bold Values':{
         psd:'Bold Values.bmp',
@@ -675,8 +750,8 @@ const CLIENT_REGISTRY = {
       },
       'Baby Anchor':{
         psd:'Baby Anchor.bmp',
-        palette:[[255,255,255],[200,200,200],[100,100,100],[0,0,0]],
-        zones:[{font:'TRADEGOTHICLTSTD-BOLD',cx:112,cy:304,w:300,h:50,angle:0.0,color:[0,0,0,255],mode:'fit',uppercase:true,forceMin:34}]
+        palette:[[250,249,250],[217,215,215],[190,188,189],[0,0,0]],
+        zones:[{font:'TRADEGOTHICLTSTD-BOLD',cx:121,cy:309,w:119,h:32,angle:0.0,color:[0,0,0,255],mode:'fit',uppercase:true,forceMin:12}]
       },
       'Baby Ducky':{
         psd:'Baby Ducky.bmp',
@@ -1424,155 +1499,143 @@ async function processAll(){
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Calibration Tab
+// Live Preview / Calibration
 // ─────────────────────────────────────────────────────────────────────────────
-let calBlankData=null,calBlankName='',calFinishedData=null,calFinishedName='';
+let prevBmpBuffer = null;
+let prevBmpFilename = '';
 
-function calLoadBlank(file){
-  if(!file)return;
-  const r=new FileReader();
-  r.onload=e=>{calBlankData=e.target.result;calBlankName=file.name;document.getElementById('calBlankName').textContent=file.name;checkCalReady();};
+function prevLoadBmp(file){
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = async e => {
+    prevBmpBuffer = e.target.result;
+    prevBmpFilename = file.name;
+    document.getElementById('prevBmpName').textContent = file.name;
+    // Populate font dropdown from loaded fonts
+    const sel = document.getElementById('prevFont');
+    sel.innerHTML = '<option value="">— select font —</option>';
+    Object.keys(fontFaces).forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f;
+      opt.textContent = f;
+      sel.appendChild(opt);
+    });
+    await runPreview();
+  };
   r.readAsArrayBuffer(file);
 }
 
-function calLoadFinished(file){
-  if(!file)return;
-  const r=new FileReader();
-  r.onload=e=>{calFinishedData=e.target.result;calFinishedName=file.name;document.getElementById('calFinishedName').textContent=file.name;checkCalReady();};
-  r.readAsArrayBuffer(file);
+function syncColorFromHex(){
+  const hex = document.getElementById('prevColorHex').value;
+  if(/^#[0-9a-fA-F]{6}$/.test(hex)){
+    document.getElementById('prevColor').value = hex;
+    runPreview();
+  }
 }
 
-function checkCalReady(){
-  document.getElementById('calBtn').disabled=!(calBlankData&&calFinishedData&&document.getElementById('calStyleName').value.trim());
+function hexToRgb(hex){
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
 }
+
+async function runPreview(){
+  if(!prevBmpBuffer) return;
+  const name     = document.getElementById('prevName').value || 'SAMPLE';
+  const fontKey_ = document.getElementById('prevFont').value;
+  const cx       = parseInt(document.getElementById('prevCx').value) || 150;
+  const cy       = parseInt(document.getElementById('prevCy').value) || 200;
+  const w        = parseInt(document.getElementById('prevW').value)  || 200;
+  const h        = parseInt(document.getElementById('prevH').value)  || 50;
+  const angle    = parseFloat(document.getElementById('prevAngle').value) || 0;
+  const uppercase = document.getElementById('prevUppercase').checked;
+  const hex      = document.getElementById('prevColor').value;
+  document.getElementById('prevColorHex').value = hex;
+  const [r,g,b]  = hexToRgb(hex);
+
+  const fsVal  = document.getElementById('prevForceSize').value;
+  const fmVal  = document.getElementById('prevForceMin').value;
+  const forceSize = fsVal ? parseInt(fsVal) : undefined;
+  const forceMin  = fmVal ? parseInt(fmVal) : undefined;
+
+  const faceName = fontKey_ ? fontFaces[fontKey_] : null;
+
+  try {
+    const canvas = await psdToCanvas(prevBmpBuffer, prevBmpFilename);
+    const zone = {
+      cx, cy, w, h, angle,
+      color: [r, g, b, 255],
+      mode: Math.abs(angle) > 5 ? 'diag' : 'fit',
+      uppercase,
+      ...(forceSize !== undefined && {forceSize}),
+      ...(forceMin  !== undefined && {forceMin}),
+    };
+    if(faceName){
+      const display = uppercase ? name.toUpperCase() : name;
+      renderTextZone(canvas, display, zone, faceName);
+    }
+
+    // Show canvas
+    const previewCanvas = document.getElementById('prevCanvas');
+    previewCanvas.width  = canvas.width;
+    previewCanvas.height = canvas.height;
+    previewCanvas.getContext('2d').drawImage(canvas, 0, 0);
+    previewCanvas.style.display = 'block';
+    document.getElementById('prevStatus').textContent =
+      `${canvas.width} × ${canvas.height}px${faceName ? '' : ' — select a font to render text'}`;
+
+    // Generate config output
+    updatePrevConfig(zone, fontKey_);
+  } catch(e) {
+    document.getElementById('prevStatus').textContent = 'Error: ' + e.message;
+  }
+}
+
+function updatePrevConfig(zone, fontKey_){
+  const parts = [];
+  if(fontKey_) parts.push(`font:'${fontKey_}'`);
+  parts.push(`cx:${zone.cx},cy:${zone.cy},w:${zone.w},h:${zone.h}`);
+  parts.push(`angle:${zone.angle}`);
+  parts.push(`color:[${zone.color.join(',')}]`);
+  parts.push(`mode:'${zone.mode}'`);
+  if(zone.uppercase) parts.push('uppercase:true');
+  if(zone.forceSize !== undefined) parts.push(`forceSize:${zone.forceSize}`);
+  if(zone.forceMin  !== undefined) parts.push(`forceMin:${zone.forceMin}`);
+  document.getElementById('prevConfig').textContent = '{' + parts.join(',') + '}';
+}
+
+function copyPrevConfig(){
+  const text = document.getElementById('prevConfig').textContent;
+  if(!text) return;
+  navigator.clipboard.writeText(text);
+  const btn = document.querySelector('#prevConfig').previousElementSibling.querySelector('.copy-btn');
+  btn.textContent = 'COPIED!';
+  setTimeout(()=>btn.textContent='COPY', 2000);
+}
+
+
+
+
+
+
 document.getElementById('calStyleName').addEventListener('input',checkCalReady);
 
-async function runCalibration(){
-  const styleName=document.getElementById('calStyleName').value.trim();
-  const sampleName=document.getElementById('calSampleName').value.trim().toLowerCase();
-  const fontFile=document.getElementById('calFontFile').value.trim();
+async 
 
-  // Load both images
-  const blankImg=await loadImageFromBuffer(calBlankData,calBlankName);
-  const finImg=await loadImageFromBuffer(calFinishedData,calFinishedName);
 
-  const bArr=getPixels(blankImg);
-  const fArr=getPixels(finImg);
-  const w=blankImg.width,h=blankImg.height;
 
-  // Get finished palette
-  const finColors=getUniqueColors(fArr,w,h);
-  const palette=finColors.map(c=>[c.r,c.g,c.b]);
 
-  // Find zones: colors that appear in finished but not (or fewer) in blank
-  const zones=[];
-  for(const fc of finColors){
-    if(fc.r===255&&fc.g===255&&fc.b===255)continue; // skip white
-    const added=findAddedPixels(bArr,fArr,w,h,fc.r,fc.g,fc.b);
-    if(added.length<20)continue;
-    // Split into clusters
-    const clusters=clusterPixels(added,w,h);
-    for(const cluster of clusters){
-      if(cluster.length<10)continue;
-      const xs=cluster.map(p=>p%w);
-      const ys=cluster.map(p=>Math.floor(p/w));
-      const l=Math.min(...xs),r2=Math.max(...xs),t=Math.min(...ys),b2=Math.max(...ys);
-      const cx=Math.round((l+r2)/2),cy=Math.round((t+b2)/2);
-      const zw=r2-l,zh=b2-t;
-      // Estimate angle from pixel regression
-      const angle=estimateAngle(xs,ys);
-      zones.push({cx,cy,w:zw,h:zh,angle:Math.round(angle*10)/10,color:[fc.r,fc.g,fc.b,255]});
-    }
-  }
 
-  // Generate config
-  const psdName=document.getElementById('calBlankName').textContent;
-  const config={
-    psd:psdName,
-    palette,
-    zones:zones.map(z=>({
-      font:fontFile||'YOUR_FONT.TTF',
-      cx:z.cx,cy:z.cy,w:z.w,h:z.h,
-      angle:z.angle,
-      color:z.color,
-      mode: Math.abs(z.angle)>20?'diag':'fit'
-    }))
-  };
 
-  const code=`'${styleName}': ${JSON.stringify(config,null,2)}`;
-  document.getElementById('calCode').textContent=code;
-  document.getElementById('calResult').style.display='block';
-}
 
-function loadImageFromBuffer(buffer,filename){
-  return new Promise(res=>{
-    const ext=(filename||'').split('.').pop().toLowerCase();
-    const mime=ext==='bmp'?'image/bmp':ext==='png'?'image/png':ext==='jpg'||ext==='jpeg'?'image/jpeg':'image/tiff';
-    const blob=new Blob([buffer],{type:mime});
-    const url=URL.createObjectURL(blob);
-    const img=new Image();
-    img.onload=()=>{
-      const c=document.createElement('canvas');c.width=img.width;c.height=img.height;
-      c.getContext('2d').drawImage(img,0,0);URL.revokeObjectURL(url);res(c);
-    };
-    img.src=url;
-  });
-}
 
-function getPixels(canvas){return canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;}
 
-function getUniqueColors(data,w,h){
-  const map={};
-  for(let i=0;i<w*h;i++){
-    const r=data[i*4],g=data[i*4+1],b=data[i*4+2];
-    const k=`${r},${g},${b}`;
-    if(!map[k])map[k]={r,g,b,count:0};
-    map[k].count++;
-  }
-  return Object.values(map).sort((a,b)=>b.count-a.count);
-}
 
-function findAddedPixels(bArr,fArr,w,h,r,g,b){
-  const added=[];
-  for(let i=0;i<w*h;i++){
-    const fi=i*4;
-    if(fArr[fi]===r&&fArr[fi+1]===g&&fArr[fi+2]===b){
-      if(!(bArr[fi]===r&&bArr[fi+1]===g&&bArr[fi+2]===b))added.push(i);
-    }
-  }
-  return added;
-}
 
-function clusterPixels(pixels,w,h){
-  if(!pixels.length)return[];
-  const rowMap={};
-  for(const p of pixels){const y=Math.floor(p/w);if(!rowMap[y])rowMap[y]=[];rowMap[y].push(p);}
-  const rows=Object.keys(rowMap).map(Number).sort((a,b)=>a-b);
-  const clusters=[];let current=[rows[0]];
-  for(let i=1;i<rows.length;i++){
-    if(rows[i]-rows[i-1]>15){clusters.push(current);current=[rows[i]];}
-    else current.push(rows[i]);
-  }
-  clusters.push(current);
-  return clusters.map(rs=>rs.flatMap(r=>rowMap[r]));
-}
 
-function estimateAngle(xs,ys){
-  if(xs.length<2)return 0;
-  const n=xs.length;
-  const mx=xs.reduce((a,b)=>a+b,0)/n;
-  const my=ys.reduce((a,b)=>a+b,0)/n;
-  let num=0,den=0;
-  for(let i=0;i<n;i++){num+=(xs[i]-mx)*(ys[i]-my);den+=(xs[i]-mx)**2;}
-  if(den===0)return 0;
-  return Math.atan(num/den)*180/Math.PI;
-}
 
-function copyCalResult(){
-  navigator.clipboard.writeText(document.getElementById('calCode').textContent);
-  const btn=document.querySelector('.copy-btn');btn.textContent='COPIED!';
-  setTimeout(()=>btn.textContent='COPY',2000);
-}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Google Auth + Whitelist + Drive Sync
@@ -1596,8 +1659,9 @@ let gUserPic     = null;
 let tokenClient  = null;
 
 const isConfigured = () =>
-  GOOGLE_CONFIG.CLIENT_ID !== 'YOUR_CLIENT_ID.apps.googleusercontent.com' &&
-  GOOGLE_CONFIG.WHITELIST_SHEET !== 'YOUR_SHEET_ID';
+  LOCAL_TEST_MODE ||
+  (GOOGLE_CONFIG.CLIENT_ID !== 'YOUR_CLIENT_ID.apps.googleusercontent.com' &&
+  GOOGLE_CONFIG.WHITELIST_SHEET !== 'YOUR_SHEET_ID');
 
 function setAuthStatus(msg, type=''){
   const el = document.getElementById('authStatus');
@@ -1693,13 +1757,18 @@ async function onGoogleCredential(response){
 }
 
 function initGoogleAuth(){
-  if(!isConfigured()){
+  if(!isConfigured() || LOCAL_TEST_MODE){
     document.getElementById('setupBanner').classList.add('visible');
-    document.getElementById('authOverlay').classList.add('hidden'); // bypass for dev
+    document.getElementById('authOverlay').classList.add('hidden');
     document.getElementById('driveBar').style.display='none';
     document.getElementById('clientBar').style.display='flex';
     populateClientSelector();
-    log('⚠ Google config not set — running in local-only mode','warn');
+    if(LOCAL_TEST_MODE){
+      log('⚠ LOCAL TEST MODE — Google Sign-In and Drive sync disabled','warn');
+      document.getElementById('setupBanner').classList.remove('visible');
+    } else {
+      log('⚠ Google config not set — running in local-only mode','warn');
+    }
     return;
   }
   try{
@@ -1761,6 +1830,7 @@ function setDriveStatus(msg){
 }
 
 async function syncFromDrive(){
+  if(LOCAL_TEST_MODE){ log('LOCAL TEST MODE — Drive sync disabled. Load files manually.','warn'); return; }
   if(!gAccessToken){ log('Not signed in — cannot sync from Drive','warn'); return; }
   if(!activeClient){ log('Select a client first','warn'); return; }
   const btn = document.getElementById('syncBtn');
