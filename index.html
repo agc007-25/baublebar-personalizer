@@ -1681,6 +1681,7 @@ function prevLoadBmp(file){
   r.onload = async e => {
     prevBmpBuffer = e.target.result;
     prevBmpFilename = file.name;
+    prevBaseCanvas = null; // reset cache for new file
     document.getElementById('prevBmpName').textContent = file.name;
     // Populate font dropdown from all loaded fonts
     const sel = document.getElementById('prevFont');
@@ -1713,6 +1714,8 @@ function hexToRgb(hex){
   return [r,g,b];
 }
 
+let prevBaseCanvas = null;
+
 async function runPreview(){
   if(!prevBmpBuffer) return;
   const name     = document.getElementById('prevName').value || 'SAMPLE';
@@ -1735,7 +1738,16 @@ async function runPreview(){
   const faceName = fontKey_ ? fontFaces[fontKey_] : null;
 
   try {
-    const canvas = await psdToCanvas(prevBmpBuffer, prevBmpFilename);
+    // Load base canvas once and cache it
+    if(!prevBaseCanvas){
+      prevBaseCanvas = await psdToCanvas(prevBmpBuffer, prevBmpFilename);
+    }
+    // Copy base so text doesn't accumulate
+    const canvas = document.createElement('canvas');
+    canvas.width = prevBaseCanvas.width;
+    canvas.height = prevBaseCanvas.height;
+    canvas.getContext('2d').drawImage(prevBaseCanvas, 0, 0);
+
     const zone = {
       cx, cy, w, h, angle,
       color: [r, g, b, 255],
@@ -1756,12 +1768,12 @@ async function runPreview(){
     previewCanvas.getContext('2d').drawImage(canvas, 0, 0);
     previewCanvas.style.display = 'block';
     document.getElementById('prevStatus').textContent =
-      `${canvas.width} × ${canvas.height}px${faceName ? '' : ' — select a font to render text'}`;
+      `${canvas.width} x ${canvas.height}px · cx:${cx} cy:${cy} w:${w} h:${h}${faceName ? '' : ' — select a font'}`;
 
-    // Generate config output
     updatePrevConfig(zone, fontKey_);
   } catch(e) {
     document.getElementById('prevStatus').textContent = 'Error: ' + e.message;
+    console.error('Preview error:', e);
   }
 }
 
