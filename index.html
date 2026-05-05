@@ -845,7 +845,7 @@ function log(msg,type='info'){
 // ─────────────────────────────────────────────────────────────────────────────
 // Drag and Drop
 // ─────────────────────────────────────────────────────────────────────────────
-['xlsxDrop','folderDrop','calBlankDrop','calFinishedDrop'].forEach(id=>{
+['xlsxDrop','folderDrop','calBlankDrop','calFinishedDrop','prevBmpDrop'].forEach(id=>{
   const el=document.getElementById(id);
   if(!el)return;
   el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('dragover');});
@@ -855,6 +855,7 @@ function log(msg,type='info'){
     const f=e.dataTransfer.files;
     if(id==='xlsxDrop')handleXlsx(f[0]);
     else if(id==='folderDrop')handleFolder(f);
+    else if(id==='prevBmpDrop')prevLoadBmp(f[0]);
     else if(id==='calBlankDrop')calLoadBlank(f[0]);
     else calLoadFinished(f[0]);
   });
@@ -1682,7 +1683,7 @@ function showApp(){
 }
 
 function signOut(){
-  google.accounts.id.disableAutoSelect();
+  try{ google.accounts.id.disableAutoSelect(); }catch(e){}
   gAccessToken=null; gUserEmail=null; gUserName=null; gUserPic=null;
   if(tokenRefreshTimer){ clearTimeout(tokenRefreshTimer); tokenRefreshTimer=null; }
   document.getElementById('authOverlay').classList.remove('hidden');
