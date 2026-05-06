@@ -1036,7 +1036,10 @@ async function psdToCanvas(buffer,filename){
       img.onload=()=>{
         const canvas=document.createElement('canvas');
         canvas.width=img.width;canvas.height=img.height;
-        canvas.getContext('2d').drawImage(img,0,0);
+        const ctx=canvas.getContext('2d');
+        ctx.fillStyle='#ffffff';
+        ctx.fillRect(0,0,img.width,img.height);
+        ctx.drawImage(img,0,0);
         URL.revokeObjectURL(url);
         resolve(canvas);
       };
