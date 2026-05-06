@@ -1468,9 +1468,19 @@ async function processAll(){
     try{
       const canvas=await psdToCanvas(psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')],mapping.psd);
       const baseName=o.name.trim().charAt(0).toUpperCase()+o.name.trim().slice(1).toLowerCase();
+      // Pre-compute lightest palette color for this template
+      const lightestColor = mapping.palette.reduce((a,b)=>{
+        const la=0.299*a[0]+0.587*a[1]+0.114*a[2];
+        const lb=0.299*b[0]+0.587*b[1]+0.114*b[2];
+        return la>=lb?a:b;
+      });
       for(const zone of resolvedZones){
-        const display=zone.uppercase?baseName.toUpperCase():baseName;
-        const enrichedZone=Object.assign({},zone,{antialias:!!mapping.antialias,palette:mapping.palette});
+        const display=zone.uppercase?baseName.toUpperCase():zone.lowercase?baseName.toLowerCase():baseName;
+        // If color is pure white placeholder [255,255,255,255], use actual lightest palette color
+        const resolvedColor = (zone.color[0]===255&&zone.color[1]===255&&zone.color[2]===255)
+          ? [lightestColor[0],lightestColor[1],lightestColor[2],255]
+          : zone.color;
+        const enrichedZone=Object.assign({},zone,{antialias:!!mapping.antialias,palette:mapping.palette,color:resolvedColor});
         renderTextZone(canvas,display,enrichedZone,lookupFont(zone.font));
       }
       zip.file(outName,canvasToTIF(canvas,mapping.palette));
