@@ -550,7 +550,7 @@ const CLIENT_REGISTRY = {
       'Housewarming':{
         psd:'Housewarming.bmp',
         palette:[[255,255,255],[216,215,215],[147,147,147],[0,0,0]],
-        zones:[{font:'Acherus Grotesque Regular',cx:407,cy:508,w:300,h:33,angle:0.0,color:[80,80,80,255],mode:'fit',forceSize:24}]
+        zones:[{font:'ACHERUS_GROTESQUE_REGULAR.OTF',cx:407,cy:508,w:300,h:33,angle:0.0,color:[80,80,80,255],mode:'fit',forceSize:24}]
       },
       'Baby Happy Camper':{
         psd:'Baby Happy Camper.bmp',
@@ -620,7 +620,7 @@ const CLIENT_REGISTRY = {
       'Baby Dinosaur':{
         psd:'Baby Dinosaur.bmp',
         palette:[[255,255,255],[205,205,205],[131,139,139],[0,0,0]],
-        zones:[{font:'GARAMOND',cx:201,cy:248,w:300,h:42,angle:0.0,color:[255,255,255,255],mode:'fit',uppercase:true,forceSize:30}]
+        zones:[{font:'GARA_R.TTF',cx:201,cy:242,w:300,h:42,angle:0.0,color:[255,255,255,255],mode:'fit',uppercase:true,forceSize:30}]
       },
       'Chevron':{
         psd:'Chevron.bmp',
@@ -684,18 +684,18 @@ const CLIENT_REGISTRY = {
       },
       'Baby Dino':{
         psd:'Baby Dino.bmp',
-        palette:[[255,255,255],[200,200,200],[100,100,100],[0,0,0]],
-        zones:[{font:'GARAMOND',cx:201,cy:248,w:300,h:42,angle:0.0,color:[255,255,255,255],mode:'fit',uppercase:true,forceSize:30}]
+        palette:[[255,255,255],[205,205,205],[131,139,139],[0,0,0]],
+        zones:[{font:'GARA_R.TTF',cx:201,cy:242,w:300,h:42,angle:0.0,color:[255,255,255,255],mode:'fit',uppercase:true,forceSize:30}]
       },
       'Baby Farm':{
         psd:'Baby Farm.bmp',
-        palette:[[255,255,255],[200,200,200],[100,100,100],[0,0,0]],
-        zones:[{font:'GARAMONDPREMRPRO-SMBD',cx:142,cy:337,w:300,h:35,angle:0.0,color:[255,255,255,255],mode:'fit',uppercase:true,forceSize:25}]
+        palette:[[255,255,255],[197,197,197],[139,139,139],[0,0,0]],
+        zones:[{font:'AGARAMONDPRO-BOLD.OTF',cx:142,cy:337,w:300,h:35,angle:0.0,color:[255,255,255,255],mode:'fit',uppercase:true,forceSize:25}]
       },
       'Herringbone Name':{
         psd:'Herringbone Name.bmp',
         palette:[[255,255,255],[207,203,203],[157,156,156],[24,24,24]],
-        zones:[{font:'GARAMONDPREMRPRO-SMBD',cx:248,cy:485,w:300,h:33,angle:0.0,color:[255,255,255,255],mode:'fit',uppercase:true,forceSize:24}]
+        zones:[{font:'AGARAMONDPRO-BOLD.OTF',cx:248,cy:485,w:300,h:33,angle:0.0,color:[255,255,255,255],mode:'fit',uppercase:true,forceSize:24}]
       },
       'Baby Herringbone':{
         psd:'Baby Herringbone.bmp',
@@ -714,7 +714,7 @@ const CLIENT_REGISTRY = {
       },
       'Kid Herringbone':{
         psd:'Kid Herringbone.bmp',
-        palette:[[255,255,255],[200,200,200],[100,100,100],[0,0,0]],
+        palette:[[255,255,255],[213,213,213],[180,189,180],[0,0,0]],
         zones:[{font:'Gotham',cx:199,cy:393,w:300,h:29,angle:0.0,color:[255,255,255,255],mode:'fit',uppercase:true,forceSize:21}]
       },
       'Baby Sun Moon Stars Milestone':{
@@ -749,7 +749,7 @@ const CLIENT_REGISTRY = {
       },
       'Baby Anchor':{
         psd:'Baby Anchor.bmp',
-        palette:[[250,249,250],[217,215,215],[190,188,189],[0,0,0]],
+        palette:[[246,246,246],[213,213,213],[189,189,189]],
         zones:[{font:'TRADEGOTHICLTSTD-BOLD',cx:112,cy:304,w:300,h:47,angle:0.0,color:[0,0,0,255],mode:'fit',uppercase:true,forceSize:34}]
       },
       'Baby Ducky':{
@@ -1213,23 +1213,33 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   const th=Math.ceil(fontSize*SCALE*1.2);
   const pad=SCALE*8;
 
+  // Pick background for offscreen canvas — use darkest palette color for maximum
+  // contrast against light text (fixes near-white text disappearing on white canvas)
+  let bgR=255,bgG=255,bgB=255;
+  if(zone.palette&&zone.palette.length>0){
+    let darkest=zone.palette[0],darkBright=darkest[0]+darkest[1]+darkest[2];
+    for(const c of zone.palette){const br=c[0]+c[1]+c[2];if(br<darkBright){darkBright=br;darkest=c;}}
+    // Only use dark background if text color is light (brightness > 384 = avg channel > 128)
+    if(r+g+b>384){[bgR,bgG,bgB]=darkest;}
+  }
+
   // Render at 8x
   const off=document.createElement('canvas');off.width=tw+pad*2;off.height=th+pad*2;
   const octx=off.getContext('2d');
-  octx.fillStyle='#ffffff';octx.fillRect(0,0,off.width,off.height);
+  octx.fillStyle=`rgb(${bgR},${bgG},${bgB})`;octx.fillRect(0,0,off.width,off.height);
   octx.font=`${fontSize*SCALE}px "${faceName}"`;
   octx.fillStyle=`rgb(${r},${g},${b})`;
   octx.textBaseline='top';
   octx.textAlign='left';
   octx.fillText(display,pad,pad);
 
-  // Threshold — snap to text color or white
+  // Threshold — snap to text color or transparent (background becomes transparent)
   const id=octx.getImageData(0,0,off.width,off.height);
   const data=id.data;
   for(let i=0;i<data.length;i+=4){
     const dr=data[i]-r,dg=data[i+1]-g,db=data[i+2]-b;
-    const dw=data[i]-255,dg2=data[i+1]-255,db2=data[i+2]-255;
-    if(dr*dr+dg*dg+db*db<dw*dw+dg2*dg2+db2*db2){data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=255;}
+    const dbr=data[i]-bgR,dbg=data[i+1]-bgG,dbb=data[i+2]-bgB;
+    if(dr*dr+dg*dg+db*db<dbr*dbr+dbg*dbg+dbb*dbb){data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=255;}
     else{data[i]=255;data[i+1]=255;data[i+2]=255;data[i+3]=0;}
   }
   octx.putImageData(id,0,0);
@@ -1262,8 +1272,8 @@ function renderTextZone(mainCanvas,display,zone,faceName){
     for(let i=0;i<rd.length;i+=4){
       if(rd[i+3]<128){rd[i]=255;rd[i+1]=255;rd[i+2]=255;rd[i+3]=0;continue;}
       const dr2=rd[i]-r,dg2=rd[i+1]-g,db2=rd[i+2]-b;
-      const dw2=rd[i]-255,dgw=rd[i+1]-255,dbw=rd[i+2]-255;
-      if(dr2*dr2+dg2*dg2+db2*db2<dw2*dw2+dgw*dgw+dbw*dbw){rd[i]=r;rd[i+1]=g;rd[i+2]=b;rd[i+3]=255;}
+      const dbr2=rd[i]-bgR,dbg2=rd[i+1]-bgG,dbb2=rd[i+2]-bgB;
+      if(dr2*dr2+dg2*dg2+db2*db2<dbr2*dbr2+dbg2*dbg2+dbb2*dbb2){rd[i]=r;rd[i+1]=g;rd[i+2]=b;rd[i+3]=255;}
       else{rd[i]=255;rd[i+1]=255;rd[i+2]=255;rd[i+3]=0;}
     }
     rctx.putImageData(rid,0,0);
