@@ -1052,24 +1052,36 @@ async function psdToCanvas(buffer,filename){
       img.src=url;
     });
   }
-  // PSD: skip composite image data, composite non-text layers manually
-  const psd=agPsd.readPsd(buffer,{skipCompositeImageData:true,skipLayerImageData:false});
+  // PSD: use composite image as base, then erase text layer regions
+  const psd=agPsd.readPsd(buffer,{skipCompositeImageData:false,skipLayerImageData:false});
   const canvas=document.createElement('canvas');
   canvas.width=psd.width;canvas.height=psd.height;
   const ctx=canvas.getContext('2d');
   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,psd.width,psd.height);
-  function compositeChildren(layers){
+  // Draw the flat composite as background
+  if(psd.canvas){ctx.drawImage(psd.canvas,0,0);}
+  // Erase text layer regions by sampling the palette's lightest color
+  // (caller will draw new text on top)
+  function eraseTextLayers(layers,palette){
     for(const l of (layers||[])){
+      if(l.children){eraseTextLayers(l.children,palette);continue;}
+      if(!l.text) continue;
       if(l.hidden) continue;
-      if(l.text) continue; // skip text/placeholder layers
-      if(l.children) compositeChildren(l.children); // recurse into groups
-      if(!l.canvas) continue;
-      ctx.globalAlpha=l.opacity!==undefined?l.opacity/255:1;
-      ctx.drawImage(l.canvas,l.left||0,l.top||0);
-      ctx.globalAlpha=1;
+      // Find the lightest palette color to fill with
+      let fill='#ffffff';
+      if(palette&&palette.length){
+        const lightest=palette.reduce((a,b)=>(a[0]+a[1]+a[2]>=b[0]+b[1]+b[2]?a:b));
+        fill=`rgb(${lightest[0]},${lightest[1]},${lightest[2]})`;
+      }
+      const x=l.left||0, y=l.top||0;
+      const w=(l.right||0)-(l.left||0);
+      const h=(l.bottom||0)-(l.top||0);
+      if(w>0&&h>0){ctx.fillStyle=fill;ctx.fillRect(x,y,w,h);}
     }
   }
-  compositeChildren(psd.children);
+  // Store text layer info on canvas for caller to use
+  canvas._psd=psd;
+  canvas._eraseTextLayers=function(palette){eraseTextLayers(psd.children,palette);};
   return canvas;
 }
 
@@ -1488,6 +1500,8 @@ async function processAll(){
     if(mf){setRow(i,'skipped',`Font not loaded: ${mf.font}`);results.push({status:'skipped',reason:`Font not loaded: ${mf.font}`});log(`⚠ Skipped ${outName} — font not loaded: ${mf.font} (tried key: ${fontKey(mf.font)})`,'warn');skipped++;continue;}
     try{
       const canvas=await psdToCanvas(psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')],mapping.psd);
+      // Erase placeholder text layer region with lightest palette color
+      if(canvas._eraseTextLayers) canvas._eraseTextLayers(mapping.palette);
       const baseName=o.name.trim().charAt(0).toUpperCase()+o.name.trim().slice(1).toLowerCase();
       // Pre-compute lightest palette color for this template
       const lightestColor = mapping.palette.reduce((a,b)=>{
