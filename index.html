@@ -749,7 +749,7 @@ const CLIENT_REGISTRY = {
       },
       'Baby Anchor':{
         psd:'Baby Anchor.bmp',
-        palette:[[246,246,246],[213,213,213],[189,189,189]],
+        palette:[[246,246,246],[213,213,213],[189,189,189],[0,0,0]],
         zones:[{font:'TRADEGOTHICLTSTD-BOLD',cx:103,cy:305,w:205,h:29,angle:0.0,color:"black",mode:'fit',forceSize:34,uppercase:true}]
       },
       'Baby Ducky':{
@@ -1533,23 +1533,7 @@ async function processAll(){
         const enrichedZone=Object.assign({},zone,{antialias:!!mapping.antialias,palette:mapping.palette,color:resolvedColor});
         renderTextZone(canvas,display,enrichedZone,lookupFont(zone.font));
       }
-      // Force text colors into palette if not already present
-const finalPalette = mapping.palette.map(c=>[...c]);
-for(const zone of resolvedZones){
-  const rc = resolveZoneColor(zone.color, mapping.palette);
-  const tr=rc[0],tg=rc[1],tb=rc[2];
-  const already = finalPalette.some(c=>c[0]===tr&&c[1]===tg&&c[2]===tb);
-  if(!already){
-    // Replace the closest palette color with the text color
-    let worstIdx=0,worstD=0;
-    for(let j=0;j<finalPalette.length;j++){
-      const d=(finalPalette[j][0]-tr)**2+(finalPalette[j][1]-tg)**2+(finalPalette[j][2]-tb)**2;
-      if(d>worstD){worstD=d;worstIdx=j;}
-    }
-    finalPalette[worstIdx]=[tr,tg,tb];
-  }
-}
-zip.file(outName,canvasToTIF(canvas,finalPalette));
+      zip.file(outName,canvasToTIF(canvas,mapping.palette));
       setRow(i,'created');results.push({status:'created'});log(`✅ ${outName}`,'ok');created++;
     }catch(err){setRow(i,'error',err.message);results.push({status:'error',reason:err.message});log(`❌ ${outName} — ${err.message}`,'err');}
     await new Promise(r=>setTimeout(r,0));updateStats();
