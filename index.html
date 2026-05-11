@@ -575,7 +575,7 @@ const CLIENT_REGISTRY = {
       'Nautical stripes':{
         psd:'Nautical Stripe.bmp',
         palette:[[255,255,255],[216,212,212],[153,150,150],[39,39,39]],
-        zones:[{font:'BEBASNEUE-REGULAR',cx:null,cy:479,w:502,h:48,angle:0.0,color:"black",mode:'fit',forceSize:40,uppercase:true}]
+        zones:[{font:'BEBASNEUE-REGULAR',cx:252,cy:479,w:502,h:48,angle:0.0,color:"black",mode:'fit',forceSize:40,uppercase:true}]
       },
       'Baby Forager':{
         psd:'Baby Forager.bmp',
@@ -585,7 +585,7 @@ const CLIENT_REGISTRY = {
       'Baby Rabbits':{
         psd:'Baby Rabbits.bmp',
         palette:[[255,255,255],[202,202,202],[129,129,129],[0,0,0]],
-        zones:[{font:'Chalkboard-Regular',cx:null,cy:49,w:302,h:53,angle:0.0,color:"black",mode:'fit',forceSize:40,lowercase:true}]
+        zones:[{font:'Chalkboard-Regular',cx:152,cy:49,w:302,h:53,angle:0.0,color:"black",mode:'fit',forceSize:40,lowercase:true}]
       },
       'Canoe with Mountains':{
         psd:'Canoe with Mountains.bmp',
@@ -670,12 +670,12 @@ const CLIENT_REGISTRY = {
       'Oars':{
         psd:'Oars.bmp',
         palette:[[255,255,255],[190,186,187],[154,150,151],[0,0,0]],
-        zones:[{font:'GARA_BD.TTF',cx:null,cy:486,w:502,h:52,angle:0.0,color:"black",mode:'fit',forceSize:40}]
+        zones:[{font:'GARA_BD.TTF',cx:252,cy:486,w:502,h:52,angle:0.0,color:"black",mode:'fit',forceSize:40}]
       },
       'Pride For All':{
         psd:'Pride For All.bmp',
         palette:[[255,255,255],[209,209,209],[242,186,34],[139,139,138],[238,28,167],[0,0,0]],
-        zones:[{font:'GARA_BD.TTF',cx:null,cy:386,w:542,h:33,angle:0.0,color:"white",mode:'fit',forceSize:28,uppercase:true}]
+        zones:[{font:'GARA_BD.TTF',cx:272,cy:386,w:542,h:33,angle:0.0,color:"white",mode:'fit',forceSize:28,uppercase:true}]
       },
       'Snaffle Bit Border':{
         psd:'Snaffle BitMaster.bmp',
@@ -690,7 +690,7 @@ const CLIENT_REGISTRY = {
       'Baby Farm':{
         psd:'Baby Farm.bmp',
         palette:[[255,255,255],[197,197,197],[139,139,139],[0,0,0]],
-        zones:[{font:'GARAMONDPREMRPRO-SMBD',cx:null,cy:340,w:302,h:30,angle:0.0,color:"white",mode:'fit',forceSize:25,uppercase:true}]
+        zones:[{font:'GARAMONDPREMRPRO-SMBD',cx:152,cy:340,w:302,h:30,angle:0.0,color:"white",mode:'fit',forceSize:25,uppercase:true}]
       },
       'Herringbone Name':{
         psd:'Herringbone Name.bmp',
@@ -750,12 +750,12 @@ const CLIENT_REGISTRY = {
       'Baby Anchor':{
         psd:'Baby Anchor.bmp',
         palette:[[246,246,246],[213,213,213],[189,189,189]],
-        zones:[{font:'TRADEGOTHICLTSTD-BOLD',cx:null,cy:305,w:205,h:29,angle:0.0,color:"black",mode:'fit',forceSize:34,uppercase:true}]
+        zones:[{font:'TRADEGOTHICLTSTD-BOLD',cx:103,cy:305,w:205,h:29,angle:0.0,color:"black",mode:'fit',forceSize:34,uppercase:true}]
       },
       'Baby Ducky':{
         psd:'Baby Ducky.bmp',
         palette:[[255,255,255],[222,222,230],[172,172,172],[0,0,0]],
-        zones:[{font:'TRADEGOTHICLTSTD-BOLD',cx:null,cy:322,w:306,h:27,angle:0.0,color:"white",mode:'fit',forceSize:38}]
+        zones:[{font:'TRADEGOTHICLTSTD-BOLD',cx:154,cy:322,w:306,h:27,angle:0.0,color:"white",mode:'fit',forceSize:38}]
       },
       'Baby Hedgehog':{
         psd:'Baby Hedgehog.bmp',
@@ -1352,8 +1352,7 @@ function renderTextZone(mainCanvas,display,zone,faceName){
     }
     mainCtx.drawImage(final,zone.rightEdge-inkRight,Math.round(zone.cy-final.height/2));
   } else {
-    const drawCx = (zone.cx==null) ? Math.round(mainCtx.canvas.width/2) : zone.cx;
-    mainCtx.drawImage(final,Math.round(drawCx-final.width/2),Math.round(zone.cy-final.height/2));
+    mainCtx.drawImage(final,Math.round(zone.cx-final.width/2),Math.round(zone.cy-final.height/2));
   }
 }
 
@@ -1534,7 +1533,23 @@ async function processAll(){
         const enrichedZone=Object.assign({},zone,{antialias:!!mapping.antialias,palette:mapping.palette,color:resolvedColor});
         renderTextZone(canvas,display,enrichedZone,lookupFont(zone.font));
       }
-      zip.file(outName,canvasToTIF(canvas,mapping.palette));
+      // Force text colors into palette if not already present
+const finalPalette = mapping.palette.map(c=>[...c]);
+for(const zone of resolvedZones){
+  const rc = resolveZoneColor(zone.color, mapping.palette);
+  const tr=rc[0],tg=rc[1],tb=rc[2];
+  const already = finalPalette.some(c=>c[0]===tr&&c[1]===tg&&c[2]===tb);
+  if(!already){
+    // Replace the closest palette color with the text color
+    let worstIdx=0,worstD=0;
+    for(let j=0;j<finalPalette.length;j++){
+      const d=(finalPalette[j][0]-tr)**2+(finalPalette[j][1]-tg)**2+(finalPalette[j][2]-tb)**2;
+      if(d>worstD){worstD=d;worstIdx=j;}
+    }
+    finalPalette[worstIdx]=[tr,tg,tb];
+  }
+}
+zip.file(outName,canvasToTIF(canvas,finalPalette));
       setRow(i,'created');results.push({status:'created'});log(`✅ ${outName}`,'ok');created++;
     }catch(err){setRow(i,'error',err.message);results.push({status:'error',reason:err.message});log(`❌ ${outName} — ${err.message}`,'err');}
     await new Promise(r=>setTimeout(r,0));updateStats();
