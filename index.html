@@ -1215,14 +1215,16 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   const th=Math.ceil(fontSize*SCALE*1.2);
   const pad=SCALE*8;
 
-  // Pick background for offscreen canvas — use darkest palette color for maximum
-  // contrast against light text (fixes near-white text disappearing on white canvas)
+  // Pick background for offscreen canvas — use darkest palette color only if
+  // it provides better contrast than white against the text color
   let bgR=255,bgG=255,bgB=255;
   if(zone.palette&&zone.palette.length>0){
     let darkest=zone.palette[0],darkBright=darkest[0]+darkest[1]+darkest[2];
     for(const c of zone.palette){const br=c[0]+c[1]+c[2];if(br<darkBright){darkBright=br;darkest=c;}}
-    // Only use dark background if text color is light (brightness > 384 = avg channel > 128)
-    if(r+g+b>384){[bgR,bgG,bgB]=darkest;}
+    const textBright=r+g+b;
+    const darkestBright=darkest[0]+darkest[1]+darkest[2];
+    // Only use dark background if text is light AND darkest palette is actually darker than text
+    if(textBright>384&&darkestBright<textBright-100){[bgR,bgG,bgB]=darkest;}
   }
 
   // Render at 8x
@@ -1235,13 +1237,13 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   octx.textAlign='left';
   octx.fillText(display,pad,pad);
 
-  // Threshold — snap to text color or transparent (background becomes transparent)
+  // Threshold — snap to text color or white
   const id=octx.getImageData(0,0,off.width,off.height);
   const data=id.data;
   for(let i=0;i<data.length;i+=4){
     const dr=data[i]-r,dg=data[i+1]-g,db=data[i+2]-b;
-    const dbr=data[i]-bgR,dbg=data[i+1]-bgG,dbb=data[i+2]-bgB;
-    if(dr*dr+dg*dg+db*db<dbr*dbr+dbg*dbg+dbb*dbb){data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=255;}
+    const dw=data[i]-255,dg2=data[i+1]-255,db2=data[i+2]-255;
+    if(dr*dr+dg*dg+db*db<dw*dw+dg2*dg2+db2*db2){data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=255;}
     else{data[i]=255;data[i+1]=255;data[i+2]=255;data[i+3]=0;}
   }
   octx.putImageData(id,0,0);
@@ -1274,8 +1276,8 @@ function renderTextZone(mainCanvas,display,zone,faceName){
     for(let i=0;i<rd.length;i+=4){
       if(rd[i+3]<128){rd[i]=255;rd[i+1]=255;rd[i+2]=255;rd[i+3]=0;continue;}
       const dr2=rd[i]-r,dg2=rd[i+1]-g,db2=rd[i+2]-b;
-      const dbr2=rd[i]-bgR,dbg2=rd[i+1]-bgG,dbb2=rd[i+2]-bgB;
-      if(dr2*dr2+dg2*dg2+db2*db2<dbr2*dbr2+dbg2*dbg2+dbb2*dbb2){rd[i]=r;rd[i+1]=g;rd[i+2]=b;rd[i+3]=255;}
+      const dw2=rd[i]-255,dgw=rd[i+1]-255,dbw=rd[i+2]-255;
+      if(dr2*dr2+dg2*dg2+db2*db2<dw2*dw2+dgw*dgw+dbw*dbw){rd[i]=r;rd[i+1]=g;rd[i+2]=b;rd[i+3]=255;}
       else{rd[i]=255;rd[i+1]=255;rd[i+2]=255;rd[i+3]=0;}
     }
     rctx.putImageData(rid,0,0);
@@ -1317,25 +1319,7 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   for(const i of kills){cd[i]=255;cd[i+1]=255;cd[i+2]=255;cd[i+3]=0;}
   sctx.putImageData(cid,0,0);
 
-  // Trim transparent rows from top and bottom of final canvas
-  // so that cy centers on actual ink, not padded canvas
-  const trimCtx=small.getContext('2d');
-  const trimData=trimCtx.getImageData(0,0,small.width,small.height).data;
-  let trimTop=0,trimBot=small.height-1;
-  for(let y=0;y<small.height;y++){
-    let hasInk=false;
-    for(let x=0;x<small.width;x++){if(trimData[(y*small.width+x)*4+3]>0){hasInk=true;break;}}
-    if(hasInk){trimTop=y;break;}
-  }
-  for(let y=small.height-1;y>=0;y--){
-    let hasInk=false;
-    for(let x=0;x<small.width;x++){if(trimData[(y*small.width+x)*4+3]>0){hasInk=true;break;}}
-    if(hasInk){trimBot=y;break;}
-  }
-  const trimmed=document.createElement('canvas');
-  trimmed.width=small.width;trimmed.height=trimBot-trimTop+1;
-  trimmed.getContext('2d').drawImage(small,0,-trimTop);
-  const final=trimmed;
+  const final=small;
   const mainCtx=mainCanvas.getContext('2d');
   mainCtx.imageSmoothingEnabled=false;
 
