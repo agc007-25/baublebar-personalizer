@@ -214,7 +214,7 @@ tr:hover td{background:rgba(0,0,0,.03);}
 <!-- Client Selector Bar -->
 <div class="client-bar" id="clientBar" style="display: flex;">
   <span class="client-label">Client</span>
-  <select class="client-select" id="clientSelect" onchange="selectClient(this.value)"><option value="">— Select a client —</option><option value="BaubleBar">BaubleBar</option><option value="In2Green">In2Green</option></select>
+  <select class="client-select" id="clientSelect" onchange="selectClient(this.value)"><option value="">— Select a client —</option><option value="BaubleBar">BaubleBar</option><option value="In2Green">In2Green</option><option value="Butterscotch">Butterscotch</option></select>
   <span class="client-badge" id="clientBadge">14 templates configured</span>
 </div>
 
@@ -698,6 +698,26 @@ const CLIENT_REGISTRY = {
         psd:'Digital Ombre.bmp',
         palette:[[255,255,255],[190,190,188],[134,133,133],[0,0,0]],
         zones:[{font:'VERDANAB',cx:379,cy:494,w:300,h:50,angle:0.0,color:[255,255,255,255],mode:'fit',uppercase:true,forceMin:24}]
+      },
+    }
+  },
+
+  'Butterscotch': {
+    label:       'Butterscotch',
+    driveFolder: '', // 1WotRsjXmJ8J9z2If6ecAkPNJsaHfxyar  // Butterscotch subfolder in Knit Assets
+    columns: {
+      orderNum: 'Order Number',
+      name:     'Name',
+      style:    'Style',
+      size:     'Size',
+      font:     'Font',  // Butterscotch: font comes from spreadsheet per order
+    },
+    sizeFilter: [],
+    templates: {
+      'SB-9': {
+        psd:     'SB-9.bmp',
+        palette: [[42,7,252],[0,0,0]],
+        zones:   [{font:'ANTIQUE ROMAN.TTF', cx:66, cy:26, w:100, h:25, angle:0, color:[0,0,0,255], mode:'fit'}]
       },
     }
   },
@@ -1939,7 +1959,7 @@ function checkWorkPw(){
 <div class="tab-content" id="tab-admin">
   <div class="admin-hdr">
     TEMPLATE CALIBRATION
-    <select class="admin-client-sel" id="adminClientSel" onchange="renderAdminPanel()"><option value="BaubleBar">BaubleBar</option><option value="In2Green">In2Green</option></select>
+    <select class="admin-client-sel" id="adminClientSel" onchange="renderAdminPanel()"><option value="BaubleBar">BaubleBar</option><option value="In2Green">In2Green</option><option value="Butterscotch">Butterscotch</option></select>
   </div>
   <div id="adminCards"></div>
   <div style="display:flex;align-items:center;gap:16px;margin-top:8px;">
