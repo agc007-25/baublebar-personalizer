@@ -1341,22 +1341,27 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   const mainCtx=mainCanvas.getContext('2d');
   mainCtx.imageSmoothingEnabled=false;
 
-  // Trim transparent rows top/bottom so cy centers on actual ink, not padded canvas
   const fd=final.getContext('2d').getImageData(0,0,final.width,final.height).data;
-  let inkTop=final.height,inkBot=0;
-  for(let y=0;y<final.height;y++){
-    for(let x=0;x<final.width;x++){
-      const i=(y*final.width+x)*4;
-      if(fd[i+3]>0&&!(fd[i]===255&&fd[i+1]===255&&fd[i+2]===255)){
-        if(y<inkTop)inkTop=y;
-        if(y>inkBot)inkBot=y;
+
+  // Butterscotch: trim transparent rows to center on actual ink
+  // BaubleBar/In2Green: use original canvas-height centering
+  let drawY;
+  if(activeClient==='Butterscotch'){
+    let inkTop=final.height,inkBot=0;
+    for(let y=0;y<final.height;y++){
+      for(let x=0;x<final.width;x++){
+        const i=(y*final.width+x)*4;
+        if(fd[i+3]>0&&!(fd[i]===255&&fd[i+1]===255&&fd[i+2]===255)){
+          if(y<inkTop)inkTop=y;
+          if(y>inkBot)inkBot=y;
+        }
       }
     }
+    if(inkTop>inkBot){inkTop=0;inkBot=final.height-1;}
+    drawY=Math.round(zone.cy-(inkTop+(inkBot-inkTop+1)/2));
+  } else {
+    drawY=Math.round(zone.cy-final.height/2);
   }
-  if(inkTop>inkBot){inkTop=0;inkBot=final.height-1;}
-  const inkH=inkBot-inkTop+1;
-  const inkCenterY=inkTop+inkH/2;
-  const drawY=Math.round(zone.cy-inkCenterY);
 
   if(zone.mode==='right'&&zone.rightEdge!=null){
     let inkRight=0;
