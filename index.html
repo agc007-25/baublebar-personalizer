@@ -1341,10 +1341,9 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   const mainCtx=mainCanvas.getContext('2d');
   mainCtx.imageSmoothingEnabled=false;
 
-  const fd=final.getContext('2d').getImageData(0,0,final.width,final.height).data;
-
-  let drawY;
   if(activeClient==='Butterscotch'){
+    // Butterscotch only: trim transparent rows to center on actual ink
+    const fd=final.getContext('2d').getImageData(0,0,final.width,final.height).data;
     let inkTop=final.height,inkBot=0;
     for(let y=0;y<final.height;y++){
       for(let x=0;x<final.width;x++){
@@ -1356,12 +1355,11 @@ function renderTextZone(mainCanvas,display,zone,faceName){
       }
     }
     if(inkTop>inkBot){inkTop=0;inkBot=final.height-1;}
-    drawY=Math.round(zone.cy-(inkTop+(inkBot-inkTop+1)/2));
-  } else {
-    drawY=Math.round(zone.cy-final.height/2);
-  }
-
-  if(zone.mode==='right'&&zone.rightEdge!=null){
+    const drawY=Math.round(zone.cy-(inkTop+(inkBot-inkTop+1)/2));
+    mainCtx.drawImage(final,Math.round(zone.cx-final.width/2),drawY);
+  } else if(zone.mode==='right'&&zone.rightEdge!=null){
+    // Original right-mode logic — unchanged
+    const fd=final.getContext('2d').getImageData(0,0,final.width,final.height).data;
     let inkRight=0;
     for(let x=final.width-1;x>=0;x--){
       let found=false;
@@ -1371,9 +1369,10 @@ function renderTextZone(mainCanvas,display,zone,faceName){
       }
       if(found){inkRight=x;break;}
     }
-    mainCtx.drawImage(final,zone.rightEdge-inkRight,drawY);
+    mainCtx.drawImage(final,zone.rightEdge-inkRight,Math.round(zone.cy-final.height/2));
   } else {
-    mainCtx.drawImage(final,Math.round(zone.cx-final.width/2),drawY);
+    // Original default — unchanged
+    mainCtx.drawImage(final,Math.round(zone.cx-final.width/2),Math.round(zone.cy-final.height/2));
   }
 }
 
