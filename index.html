@@ -1356,7 +1356,7 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   if(inkTop>inkBot){inkTop=0;inkBot=final.height-1;}
   const inkH=inkBot-inkTop+1;
   const inkCenterY=inkTop+inkH/2;
-  const drawY=Math.round(zone.cy-inkCenterY)+(activeClient==='Butterscotch'?5:0);
+  const drawY=Math.round(zone.cy-inkCenterY);
 
   if(zone.mode==='right'&&zone.rightEdge!=null){
     let inkRight=0;
