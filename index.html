@@ -429,7 +429,7 @@ const CLIENT_REGISTRY = {
       'Spell It Out|Throw':{
         psd:'SPELL_IT_OUT_SMALL.Bmp',
         palette:[[45,45,45],[255,255,255]],
-        zones:[{font:'DEALERPLATE_CALIFORNIA.TTF',cx:179,cy:263,w:330,h:60,angle:0,color:[45,45,45,255],mode:'fit'}]
+        zones:[{font:'DEALERPLATE_CALIFORNIA.TTF',cx:179,cy:245,w:330,h:60,angle:0,color:[45,45,45,255],mode:'fit'}]
       },
       'Down The Line|Throw':{
         psd:'down_the_line_throw.bmp',
@@ -450,7 +450,7 @@ const CLIENT_REGISTRY = {
       'Spell It Out|Blanket':{
         psd:'SPELL_IT_OUT_LARGE.Bmp',
         palette:[[45,45,45],[255,255,255]],
-        zones:[{font:'DEALERPLATE_CALIFORNIA.TTF',cx:282,cy:362,w:490,h:114,angle:0,color:[45,45,45,255],mode:'fit'}]
+        zones:[{font:'DEALERPLATE_CALIFORNIA.TTF',cx:282,cy:338,w:490,h:114,angle:0,color:[45,45,45,255],mode:'fit'}]
       },
       'Wild at Heart|Blanket':{
         psd:'WILD_AT_HEART_LARGE_2_COLOR.Bmp',
@@ -1343,8 +1343,6 @@ function renderTextZone(mainCanvas,display,zone,faceName){
 
   const fd=final.getContext('2d').getImageData(0,0,final.width,final.height).data;
 
-  // Butterscotch: trim transparent rows to center on actual ink
-  // BaubleBar/In2Green: use original canvas-height centering
   let drawY;
   if(activeClient==='Butterscotch'){
     let inkTop=final.height,inkBot=0;
