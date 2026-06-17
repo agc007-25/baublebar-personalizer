@@ -226,6 +226,7 @@ tr:hover td{background:rgba(0,0,0,.03);}
 </div>
 <div class="tabs">
   <div class="tab active" onclick="switchTab('process')">PROCESS ORDERS</div>
+  <div class="tab" onclick="switchTab('quicktest')">QUICK TEST</div>
   <div class="tab" onclick="switchTab('calibrate')">ADD NEW TEMPLATE</div>
   <div class="tab" onclick="promptAdminLogin()">⚙ ADMIN</div>
 </div>
@@ -299,6 +300,42 @@ tr:hover td{background:rgba(0,0,0,.03);}
     <div class="log" id="logPanel">
       <div class="log-entry"><span class="log-time">--:--:--</span><span class="log-msg info">System ready. PSDs and fonts are remembered between sessions.</span></div>
     <div class="log-entry"><span class="log-time">13:53:26</span><span class="log-msg ok">Restored from cache: 15 PSDs, 12 fonts</span></div><div class="log-entry"><span class="log-time">13:53:32</span><span class="log-msg ok">Signed in as andy.concilio@gmail.com</span></div><div class="log-entry"><span class="log-time">13:53:32</span><span class="log-msg warn">Select a client first</span></div><div class="log-entry"><span class="log-time">13:53:36</span><span class="log-msg info">Client switched to BaubleBar — syncing assets…</span></div><div class="log-entry"><span class="log-time">13:53:36</span><span class="log-msg info">Syncing assets from Google Drive…</span></div><div class="log-entry"><span class="log-time">13:53:36</span><span class="log-msg info">0 assets up to date · downloading 27 new/changed…</span></div><div class="log-entry"><span class="log-time">13:53:38</span><span class="log-msg ok">Sync complete — 15 templates, 12 fonts</span></div><div class="log-entry"><span class="log-time">13:53:46</span><span class="log-msg ok">Loaded 7 orders from MTO Order Tracker_EG_Custom Blankets_4.27.26.xlsx</span></div><div class="log-entry"><span class="log-time">13:53:46</span><span class="log-msg warn">3 orders have no matching template (e.g. "On Repeat") — will be skipped</span></div><div class="log-entry"><span class="log-time">13:53:49</span><span class="log-msg info">Client: BaubleBar</span></div><div class="log-entry"><span class="log-time">13:53:49</span><span class="log-msg info">Loaded PSDs: down_the_line_throw.bmp, wild_at_heart_kids_2_color.bmp, wild_child_kids_blank.bmp, spell_it_out_small.bmp, subtly_scalloped_blanket.bmp, wild_at_heart_large_2_color.bmp, wild_at_heart_small_2_color.bmp, spell_it_out_large.bmp, subtly_scalloped_small.bmp, spell_it_out_kids_blank.bmp, subtly_scalloped_kids_blank.bmp, sweettooth_kids_blank.bmp, down_the_line_kids.bmp, large_-_subtly_scalloped_3+5=_denim_heather_4=_lt_blue_6=_natural.bmp, play_date_kids_blank.bmp</span></div><div class="log-entry"><span class="log-time">13:53:49</span><span class="log-msg info">Loaded Fonts: TREBUCIT.TTF, SPONGYTHIN_PERSONAL_USE_ONLY.OTF, SPONGY_PERSONAL_USE_ONLY.OTF, TREBUCBI.TTF, TREBUC.TTF, TREBUCBD.TTF, SPONGYBOLD_PERSONAL_USE_ONLY.OTF, SORIA-BOLD.OTF, ETERNATE_BOLD.OTF, KEEPONTRUCKIN.TTF, ETERNATE.OTF, DEALERPLATE_CALIFORNIA.TTF</span></div><div class="log-entry"><span class="log-time">13:53:49</span><span class="log-msg info">Order styles: Subtly Scalloped / Kids (38in x 31in), Wild Child / Kids (38in x 31in), On Repeat / Throw (54in x 36in), Subtly Scalloped / Throw (54in x 36in)</span></div><div class="log-entry"><span class="log-time">13:53:49</span><span class="log-msg ok">✅ SO3572379_jayla.tif</span></div><div class="log-entry"><span class="log-time">13:53:51</span><span class="log-msg ok">✅ SO3577610_KADE.tif</span></div><div class="log-entry"><span class="log-time">13:53:51</span><span class="log-msg warn">⚠ Skipped SO3574043_M.tif — no template for "On Repeat / Throw (54in x 36in)"</span></div><div class="log-entry"><span class="log-time">13:53:51</span><span class="log-msg warn">⚠ Skipped SO3575833_M.tif — no template for "On Repeat / Throw (54in x 36in)"</span></div><div class="log-entry"><span class="log-time">13:53:51</span><span class="log-msg warn">⚠ Skipped SO3577678_S.tif — no template for "On Repeat / Throw (54in x 36in)"</span></div><div class="log-entry"><span class="log-time">13:53:51</span><span class="log-msg ok">✅ SO3575766_blake.tif</span></div><div class="log-entry"><span class="log-time">13:53:52</span><span class="log-msg ok">✅ SO3574905_grace.tif</span></div><div class="log-entry"><span class="log-time">13:53:52</span><span class="log-msg ok">📦 ZIP ready — 4 TIFs</span></div></div>
+  </div>
+</div>
+
+<!-- ── QUICK TEST TAB ── -->
+<div class="tab-content" id="tab-quicktest">
+  <div class="cal-wrap">
+    <div class="cal-title">Quick Test a Template</div>
+    <div class="cal-sub">
+      Test how a name renders on any existing template — no spreadsheet needed.<br>
+      This uses the exact same render code as Process Orders, so results match real runs.<br>
+      Read-only: nothing here changes any saved template settings.
+    </div>
+    <div class="cal-fields">
+      <div class="field-group"><label>Template</label>
+        <select id="qtTemplate" onchange="qtOnTemplateChange()"><option value="">— Select a template —</option></select>
+      </div>
+      <div class="field-group"><label>Name to render</label>
+        <input type="text" id="qtName" placeholder="e.g. Julia">
+      </div>
+      <div class="field-group"><label>Font (override, optional)</label>
+        <input type="text" id="qtFont" placeholder="leave blank to use template default">
+      </div>
+    </div>
+    <button class="cal-btn" id="qtBtn" onclick="runQuickTest()">GENERATE TEST</button>
+    <div class="cal-result" id="qtResult" style="display:none">
+      <div class="cal-result-title">Result</div>
+      <div style="margin-bottom:8px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:13px;color:#ccc"><input type="checkbox" id="qtGridToggle" onchange="qtRedrawOverlay()"> Show 10px grid</label>
+        <label style="font-size:13px;color:#ccc"><input type="checkbox" id="qtCrosshairToggle" checked="" onchange="qtRedrawOverlay()"> Show zone crosshair (cx/cy)</label>
+        <span style="font-size:12px;color:#888">Zoom: <input type="range" id="qtZoom" min="1" max="6" step="0.5" value="2" oninput="qtRedrawOverlay()" style="vertical-align:middle"></span>
+      </div>
+      <div style="overflow:auto;max-width:100%;border:1px solid #444;display:inline-block">
+        <canvas id="qtCanvas" style="image-rendering:pixelated;background:#fff;display:block"></canvas>
+      </div>
+      <div id="qtDownloadWrap" style="margin-top:10px"></div>
+    </div>
   </div>
 </div>
 
@@ -856,7 +893,7 @@ function lookupFont(name){
 // Tabs
 // ─────────────────────────────────────────────────────────────────────────────
 function switchTab(name){
-  document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',['process','calibrate','admin'][i]===name);});
+  document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',['process','quicktest','calibrate','admin'][i]===name);});
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
 }
@@ -1504,6 +1541,150 @@ function getTemplate(order){
 // ─────────────────────────────────────────────────────────────────────────────
 // Process All
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Core single-template render — used by BOTH the batch processor (processAll)
+// and the Quick Test tab. This is the ONLY place that turns a template mapping
+// + name + optional font override into a finished canvas. Keeping this single
+// source of truth guarantees Quick Test results always match real batch runs.
+// ─────────────────────────────────────────────────────────────────────────────
+async function renderOneTemplate(mapping, rawName, fontOverride){
+  const resolvedZones = mapping.zones.map(z=>{
+    if(fontOverride && lookupFont(fontOverride)) return Object.assign({},z,{font:fontOverride});
+    return z;
+  });
+  const mf=resolvedZones.find(z=>!lookupFont(z.font));
+  if(mf){ throw new Error(`Font not loaded: ${mf.font} (tried key: ${fontKey(mf.font)})`); }
+  if(!psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')]){ throw new Error(`PSD not loaded: ${mapping.psd}`); }
+
+  const canvas=await psdToCanvas(psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')],mapping.psd);
+  const baseName=rawName.trim().charAt(0).toUpperCase()+rawName.trim().slice(1).toLowerCase();
+  const lightestColor = mapping.palette.reduce((a,b)=>{
+    const la=0.299*a[0]+0.587*a[1]+0.114*a[2];
+    const lb=0.299*b[0]+0.587*b[1]+0.114*b[2];
+    return la>=lb?a:b;
+  });
+  for(const zone of resolvedZones){
+    const display=zone.uppercase?baseName.toUpperCase():zone.lowercase?baseName.toLowerCase():baseName;
+    const resolvedColor=(zone.color[0]===255&&zone.color[1]===255&&zone.color[2]===255)
+      ?[lightestColor[0],lightestColor[1],lightestColor[2],255]
+      :zone.color;
+    const enrichedZone=Object.assign({},zone,{antialias:!!mapping.antialias,palette:mapping.palette,color:resolvedColor});
+    renderTextZone(canvas,display,enrichedZone,lookupFont(zone.font));
+  }
+  return canvas;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quick Test Tab — calls the same renderOneTemplate() used by processAll().
+// Read-only: never writes to CLIENT_REGISTRY, never touches batch state.
+// ─────────────────────────────────────────────────────────────────────────────
+function qtPopulateTemplates(){
+  const sel=document.getElementById('qtTemplate');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— Select a template —</option>';
+  if(!activeClient || !CLIENT_REGISTRY[activeClient]) return;
+  const names=Object.keys(CLIENT_REGISTRY[activeClient].templates).sort();
+  for(const n of names){
+    const opt=document.createElement('option');
+    opt.value=n; opt.textContent=n;
+    sel.appendChild(opt);
+  }
+}
+
+function qtOnTemplateChange(){
+  const key=document.getElementById('qtTemplate').value;
+  const fontField=document.getElementById('qtFont');
+  if(!key || !activeClient){ fontField.placeholder='leave blank to use template default'; return; }
+  const mapping=CLIENT_REGISTRY[activeClient].templates[key];
+  const defaultFont=mapping.zones[0]?.font || '';
+  fontField.placeholder=`leave blank to use default: ${defaultFont}`;
+}
+
+let qtLastRender=null;
+
+function qtRedrawOverlay(){
+  if(!qtLastRender)return;
+  const {canvas, mapping}=qtLastRender;
+  const zoom=parseFloat(document.getElementById('qtZoom').value)||2;
+  const showGrid=document.getElementById('qtGridToggle').checked;
+  const showCrosshair=document.getElementById('qtCrosshairToggle').checked;
+
+  const out=document.getElementById('qtCanvas');
+  out.width=canvas.width*zoom;
+  out.height=canvas.height*zoom;
+  const ctx=out.getContext('2d');
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(canvas,0,0,canvas.width,canvas.height,0,0,out.width,out.height);
+
+  if(showGrid){
+    ctx.save();
+    ctx.strokeStyle='rgba(0,200,255,0.35)';
+    ctx.lineWidth=1;
+    ctx.font=`${Math.max(9,9*Math.min(zoom,2))}px monospace`;
+    ctx.fillStyle='rgba(0,200,255,0.9)';
+    for(let x=0;x<=canvas.width;x+=10){
+      ctx.beginPath();ctx.moveTo(x*zoom+0.5,0);ctx.lineTo(x*zoom+0.5,out.height);ctx.stroke();
+      if(x%50===0)ctx.fillText(String(x),x*zoom+2,10);
+    }
+    for(let y=0;y<=canvas.height;y+=10){
+      ctx.beginPath();ctx.moveTo(0,y*zoom+0.5);ctx.lineTo(out.width,y*zoom+0.5);ctx.stroke();
+      if(y%50===0)ctx.fillText(String(y),2,y*zoom+10);
+    }
+    ctx.restore();
+  }
+
+  if(showCrosshair && mapping.zones){
+    ctx.save();
+    ctx.strokeStyle='rgba(255,80,80,0.9)';
+    ctx.lineWidth=1.5;
+    ctx.font='11px monospace';
+    ctx.fillStyle='rgba(255,80,80,0.95)';
+    for(const z of mapping.zones){
+      const cx=z.cx*zoom, cy=z.cy*zoom;
+      ctx.beginPath();ctx.moveTo(cx-8,cy);ctx.lineTo(cx+8,cy);ctx.moveTo(cx,cy-8);ctx.lineTo(cx,cy+8);ctx.stroke();
+      ctx.fillText(`cx:${z.cx} cy:${z.cy}`,cx+10,cy-6);
+    }
+    ctx.restore();
+  }
+}
+
+async function runQuickTest(){
+  const key=document.getElementById('qtTemplate').value;
+  const name=document.getElementById('qtName').value.trim();
+  const fontOverride=document.getElementById('qtFont').value.trim();
+  const resultBox=document.getElementById('qtResult');
+  const btn=document.getElementById('qtBtn');
+
+  if(!activeClient){ log('Quick Test: select a client first','warn'); return; }
+  if(!key){ log('Quick Test: select a template first','warn'); return; }
+  if(!name){ log('Quick Test: enter a name to render','warn'); return; }
+
+  const mapping=CLIENT_REGISTRY[activeClient].templates[key];
+  btn.disabled=true; btn.textContent='RENDERING...';
+  try{
+    const canvas=await renderOneTemplate(mapping, name, fontOverride||null);
+    qtLastRender={canvas, mapping};
+    resultBox.style.display='block';
+    qtRedrawOverlay();
+
+    const tifBlob=new Blob([canvasToTIF(canvas,mapping.palette)],{type:'image/tiff'});
+    const url=URL.createObjectURL(tifBlob);
+    const dlWrap=document.getElementById('qtDownloadWrap');
+    dlWrap.innerHTML='';
+    const dl=document.createElement('a');
+    dl.href=url; dl.download=`TEST_${key}_${name}.tif`;
+    dl.className='dl-btn'; dl.textContent='⬇ DOWNLOAD TEST TIF';
+    dlWrap.appendChild(dl);
+
+    log(`Quick Test: ${key} / "${name}" rendered OK`,'ok');
+  }catch(err){
+    resultBox.style.display='none';
+    log(`Quick Test failed — ${err.message}`,'err');
+    alert(`Quick Test failed: ${err.message}`);
+  }
+  btn.disabled=false; btn.textContent='GENERATE TEST';
+}
+
 async function processAll(){
   results=[];
   const btn=document.getElementById('processBtn');
@@ -1530,35 +1711,15 @@ async function processAll(){
     const outName=usedNames[baseName_]===1?`${baseName_}.tif`:`${baseName_}_${usedNames[baseName_]}.tif`;
     const mapping=getTemplate(o);
     if(!mapping){setRow(i,'skipped',`No template for "${o.style} / ${o.size}"`);results.push({status:'skipped',reason:`No template for "${o.style} / ${o.size}"`});log(`⚠ Skipped ${outName} — no template for "${o.style} / ${o.size}"`,'warn');skipped++;continue;}
-    if(!psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')]){setRow(i,'skipped',`PSD not loaded: ${mapping.psd}`);results.push({status:'skipped',reason:`PSD not loaded: ${mapping.psd}`});log(`⚠ Skipped ${outName} — PSD not loaded: ${mapping.psd}`,'warn');skipped++;continue;}
-    // Resolve zones — if order has a font override, apply it to all zones
-    const resolvedZones = mapping.zones.map(z=>{
-      if(o.font && lookupFont(o.font)) return Object.assign({},z,{font:o.font});
-      return z;
-    });
-    const mf=resolvedZones.find(z=>!lookupFont(z.font));
-    if(mf){setRow(i,'skipped',`Font not loaded: ${mf.font}`);results.push({status:'skipped',reason:`Font not loaded: ${mf.font}`});log(`⚠ Skipped ${outName} — font not loaded: ${mf.font} (tried key: ${fontKey(mf.font)})`,'warn');skipped++;continue;}
     try{
-      const canvas=await psdToCanvas(psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')],mapping.psd);
-      const baseName=o.name.trim().charAt(0).toUpperCase()+o.name.trim().slice(1).toLowerCase();
-      // Pre-compute lightest palette color for this template
-      const lightestColor = mapping.palette.reduce((a,b)=>{
-        const la=0.299*a[0]+0.587*a[1]+0.114*a[2];
-        const lb=0.299*b[0]+0.587*b[1]+0.114*b[2];
-        return la>=lb?a:b;
-      });
-      for(const zone of resolvedZones){
-        const display=zone.uppercase?baseName.toUpperCase():zone.lowercase?baseName.toLowerCase():baseName;
-        // If color is pure white [255,255,255,255], resolve to actual lightest palette color
-        const resolvedColor=(zone.color[0]===255&&zone.color[1]===255&&zone.color[2]===255)
-          ?[lightestColor[0],lightestColor[1],lightestColor[2],255]
-          :zone.color;
-        const enrichedZone=Object.assign({},zone,{antialias:!!mapping.antialias,palette:mapping.palette,color:resolvedColor});
-        renderTextZone(canvas,display,enrichedZone,lookupFont(zone.font));
-      }
+      const canvas=await renderOneTemplate(mapping, o.name, o.font);
       zip.file(outName,canvasToTIF(canvas,mapping.palette));
       setRow(i,'created');results.push({status:'created'});log(`✅ ${outName}`,'ok');created++;
-    }catch(err){setRow(i,'error',err.message);results.push({status:'error',reason:err.message});log(`❌ ${outName} — ${err.message}`,'err');}
+    }catch(err){
+      const isMissing = /not loaded/.test(err.message);
+      if(isMissing){setRow(i,'skipped',err.message);results.push({status:'skipped',reason:err.message});log(`⚠ Skipped ${outName} — ${err.message}`,'warn');skipped++;}
+      else{setRow(i,'error',err.message);results.push({status:'error',reason:err.message});log(`❌ ${outName} — ${err.message}`,'err');}
+    }
     await new Promise(r=>setTimeout(r,0));updateStats();
   }
 
@@ -1901,10 +2062,11 @@ function selectClient(key){
   document.getElementById('tableMeta').textContent='No orders loaded';
   updateStats(); checkReady();
 
-  if(!key){ document.getElementById('clientBadge').textContent=''; document.getElementById('sizeBadge').textContent=''; return; }
+  if(!key){ document.getElementById('clientBadge').textContent=''; document.getElementById('sizeBadge').textContent=''; qtPopulateTemplates(); return; }
   const cfg = CLIENT_REGISTRY[key];
   document.getElementById('clientBadge').textContent = Object.keys(cfg.templates).length + ' templates configured';
   document.getElementById('sizeBadge').textContent = key.toUpperCase();
+  qtPopulateTemplates();
 
   // Clear IndexedDB and sync fresh assets for this client
   dbClearAll().then(()=>{
