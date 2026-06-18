@@ -1118,13 +1118,22 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   octx.textAlign='left';
   octx.fillText(display,pad,pad);
 
-  // Threshold — snap to text color or white
+  // Threshold — snap to text color or transparent
+  // Special case: if text color is white, any non-white pixel becomes white text
   const id=octx.getImageData(0,0,off.width,off.height);
   const data=id.data;
+  const isWhiteText=(r===255&&g===255&&b===255);
   for(let i=0;i<data.length;i+=4){
-    const dr=data[i]-r,dg=data[i+1]-g,db=data[i+2]-b;
-    const dw=data[i]-255,dg2=data[i+1]-255,db2=data[i+2]-255;
-    if(dr*dr+dg*dg+db*db<dw*dw+dg2*dg2+db2*db2){data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=255;}
+    let isText;
+    if(isWhiteText){
+      // White text: pixel is text if it's not pure white background
+      isText=!(data[i]===255&&data[i+1]===255&&data[i+2]===255);
+    } else {
+      const dr=data[i]-r,dg=data[i+1]-g,db=data[i+2]-b;
+      const dw=data[i]-255,dg2=data[i+1]-255,db2=data[i+2]-255;
+      isText=(dr*dr+dg*dg+db*db)<(dw*dw+dg2*dg2+db2*db2);
+    }
+    if(isText){data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=255;}
     else{data[i]=255;data[i+1]=255;data[i+2]=255;data[i+3]=0;}
   }
   octx.putImageData(id,0,0);
@@ -1156,9 +1165,15 @@ function renderTextZone(mainCanvas,display,zone,faceName){
     const rd=rid.data;
     for(let i=0;i<rd.length;i+=4){
       if(rd[i+3]<128){rd[i]=255;rd[i+1]=255;rd[i+2]=255;rd[i+3]=0;continue;}
-      const dr2=rd[i]-r,dg2=rd[i+1]-g,db2=rd[i+2]-b;
-      const dw2=rd[i]-255,dgw=rd[i+1]-255,dbw=rd[i+2]-255;
-      if(dr2*dr2+dg2*dg2+db2*db2<dw2*dw2+dgw*dgw+dbw*dbw){rd[i]=r;rd[i+1]=g;rd[i+2]=b;rd[i+3]=255;}
+      let isText2;
+      if(isWhiteText){
+        isText2=!(rd[i]===255&&rd[i+1]===255&&rd[i+2]===255);
+      } else {
+        const dr2=rd[i]-r,dg2=rd[i+1]-g,db2=rd[i+2]-b;
+        const dw2=rd[i]-255,dgw=rd[i+1]-255,dbw=rd[i+2]-255;
+        isText2=(dr2*dr2+dg2*dg2+db2*db2)<(dw2*dw2+dgw*dgw+dbw*dbw);
+      }
+      if(isText2){rd[i]=r;rd[i+1]=g;rd[i+2]=b;rd[i+3]=255;}
       else{rd[i]=255;rd[i+1]=255;rd[i+2]=255;rd[i+3]=0;}
     }
     rctx.putImageData(rid,0,0);
@@ -1423,12 +1438,10 @@ async function renderOneTemplate(mapping, rawName, fontOverride){
   },[100,100,100]);
   for(const zone of resolvedZones){
     const display=zone.uppercase?baseName.toUpperCase():zone.lowercase?baseName.toLowerCase():baseName;
-    // Resolve color sentinel values
+    // Resolve color: 'dkgrey' → darkest non-black palette color; arrays used as-is
     let resolvedColor;
     if(zone.color==='dkgrey'){
       resolvedColor=[dkGreyColor[0],dkGreyColor[1],dkGreyColor[2],255];
-    } else if(Array.isArray(zone.color)&&zone.color[0]===255&&zone.color[1]===255&&zone.color[2]===255){
-      resolvedColor=[lightestColor[0],lightestColor[1],lightestColor[2],255];
     } else {
       resolvedColor=zone.color;
     }
