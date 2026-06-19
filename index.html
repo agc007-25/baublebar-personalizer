@@ -516,7 +516,8 @@ const CLIENT_REGISTRY = {
     },
     sizeFilter: [],  // empty = accept all sizes
     templates: {
-      // ── SINGLE ZONE ───────────────────────────────────────────────────────
+      // cx = spreadsheet left-edge + w/2 (true center X)
+      // cy = spreadsheet top-edge + h/2 (true center Y)
       'Baby Anchor':{psd:'Baby Anchor.bmp',autoPalette:true,zones:[{font:'TRADEGOTHICLTSTD-BOLD',cx:103,cy:305,w:205,h:29,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:34,uppercase:true}]},
       'Baby Dino':{psd:'Baby Dino.bmp',autoPalette:true,zones:[{font:'GARA_BD.TTF',cx:203,cy:254,w:183,h:37,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:30,uppercase:true}]},
       'Baby Dinosaur':{psd:'Baby Dino.bmp',autoPalette:true,zones:[{font:'GARA_BD.TTF',cx:203,cy:254,w:183,h:37,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:30,uppercase:true}]},
@@ -540,7 +541,7 @@ const CLIENT_REGISTRY = {
       'Fair Isle with Skis':{psd:'Faire Isle With Skis.bmp',autoPalette:true,zones:[{font:'GARA_BD.TTF',cx:249,cy:518,w:193,h:31,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:25,uppercase:true}]},
       'Herringbone Initials':{psd:'Herringbone Initials.bmp',autoPalette:true,zones:[{font:'GARA_BD.TTF',cx:443,cy:456,w:70,h:28,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:23,uppercase:true}]},
       'Herringbone Name':{psd:'Herringbone Name.bmp',autoPalette:true,zones:[{font:'GARAMONDPREMRPRO-SMBD',cx:250,cy:491,w:123,h:30,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:24,uppercase:true}]},
-      'Herringbone Stripe':{psd:'Herringbone Stripe.bmp',autoPalette:true,zones:[{font:'Gotham',cx:60,cy:479,w:300,h:50,angle:90.0,color:[255,255,255,255],mode:'fit',forceSize:22}]},
+      'Herringbone Stripe':{psd:'Herringbone Stripe.bmp',autoPalette:true,zones:[{font:'Gotham',cx:210,cy:504,w:300,h:50,angle:90.0,color:[255,255,255,255],mode:'fit',forceSize:22}]},
       'Houndstooth Horse Bit':{psd:'Houndstooth HorseBit.bmp',autoPalette:true,zones:[{font:'CHEROKEE',cx:249,cy:512,w:237,h:52,angle:0.0,color:'dkgrey',mode:'fit',forceSize:40,uppercase:true}]},
       'Housewarming':{psd:'Housewarming.bmp',autoPalette:true,zones:[{font:'Acherus Grotesque Regular',cx:404,cy:504,w:143,h:30,angle:0.0,color:'dkgrey',mode:'fit',forceSize:24}]},
       'Kid Herringbone':{psd:'KidHerringbone.bmp',autoPalette:true,zones:[{font:'Gotham',cx:200,cy:396,w:148,h:23,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:21,uppercase:true}]},
@@ -552,10 +553,10 @@ const CLIENT_REGISTRY = {
       'Snaffle Bit Border':{psd:'Snaffle BitMaster.bmp',autoPalette:true,zones:[{font:'GARA_BD.TTF',cx:339,cy:509,w:194,h:43,angle:0.0,color:'dkgrey',mode:'fit',forceSize:35,uppercase:true}]},
       'Woodgrain Heart':{psd:'Woodgrain Heart.bmp',autoPalette:true,zones:[{font:'MARYDBOL',cx:367,cy:426,w:83,h:47,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:33,uppercase:true}]},
       // ── MULTI-ZONE (pending) ───────────────────────────────────────────────
-      // 'Baby Block Milestone' — 2 zones: cy:18 and cy:333, cx:152
+      // 'Baby Block Milestone' — 2 zones
       // 'Chevron' — 2 zones
-      // 'Confetti (1 Line/ 2 Lines)' — 2 zones: cy:357 and cy:404, cx:308
-      // 'Love Letters' — 2 zones: cx:212/385, cy:265/264
+      // 'Confetti (1 Line/ 2 Lines)' — 2 zones
+      // 'Love Letters' — 2 zones
       // 'M&G- Nautical Flag (2 Line)' — 2 zones
       // 'M&G- Tie The Knot (2 Line)' — 2 zones
       // 'M&G- Vintage American Flag (2 Line)' — 2 zones
@@ -1111,22 +1112,24 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   // Render at 8x
   const off=document.createElement('canvas');off.width=tw+pad*2;off.height=th+pad*2;
   const octx=off.getContext('2d');
+  const isWhiteText=(r===255&&g===255&&b===255);
+  // If text is white, draw it in black on white bg so it's visible, then we'll
+  // invert/recolor during threshold below. Drawing white-on-white is invisible.
+  const drawR=isWhiteText?0:r, drawG=isWhiteText?0:g, drawB=isWhiteText?0:b;
   octx.fillStyle='#ffffff';octx.fillRect(0,0,off.width,off.height);
   octx.font=`${fontSize*SCALE}px "${faceName}"`;
-  octx.fillStyle=`rgb(${r},${g},${b})`;
+  octx.fillStyle=`rgb(${drawR},${drawG},${drawB})`;
   octx.textBaseline='top';
   octx.textAlign='left';
   octx.fillText(display,pad,pad);
 
   // Threshold — snap to text color or transparent
-  // Special case: if text color is white, any non-white pixel becomes white text
   const id=octx.getImageData(0,0,off.width,off.height);
   const data=id.data;
-  const isWhiteText=(r===255&&g===255&&b===255);
   for(let i=0;i<data.length;i+=4){
     let isText;
     if(isWhiteText){
-      // White text: pixel is text if it's not pure white background
+      // Drew in black-on-white above: any non-white pixel is text → recolor to actual white
       isText=!(data[i]===255&&data[i+1]===255&&data[i+2]===255);
     } else {
       const dr=data[i]-r,dg=data[i+1]-g,db=data[i+2]-b;
@@ -1165,15 +1168,14 @@ function renderTextZone(mainCanvas,display,zone,faceName){
     const rd=rid.data;
     for(let i=0;i<rd.length;i+=4){
       if(rd[i+3]<128){rd[i]=255;rd[i+1]=255;rd[i+2]=255;rd[i+3]=0;continue;}
-      let isText2;
       if(isWhiteText){
-        isText2=!(rd[i]===255&&rd[i+1]===255&&rd[i+2]===255);
-      } else {
-        const dr2=rd[i]-r,dg2=rd[i+1]-g,db2=rd[i+2]-b;
-        const dw2=rd[i]-255,dgw=rd[i+1]-255,dbw=rd[i+2]-255;
-        isText2=(dr2*dr2+dg2*dg2+db2*db2)<(dw2*dw2+dgw*dgw+dbw*dbw);
+        // Already correctly colored white text with full alpha from first pass — keep as-is
+        rd[i]=r;rd[i+1]=g;rd[i+2]=b;rd[i+3]=255;
+        continue;
       }
-      if(isText2){rd[i]=r;rd[i+1]=g;rd[i+2]=b;rd[i+3]=255;}
+      const dr2=rd[i]-r,dg2=rd[i+1]-g,db2=rd[i+2]-b;
+      const dw2=rd[i]-255,dgw=rd[i+1]-255,dbw=rd[i+2]-255;
+      if((dr2*dr2+dg2*dg2+db2*db2)<(dw2*dw2+dgw*dgw+dbw*dbw)){rd[i]=r;rd[i+1]=g;rd[i+2]=b;rd[i+3]=255;}
       else{rd[i]=255;rd[i+1]=255;rd[i+2]=255;rd[i+3]=0;}
     }
     rctx.putImageData(rid,0,0);
