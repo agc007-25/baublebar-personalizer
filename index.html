@@ -541,7 +541,7 @@ const CLIENT_REGISTRY = {
       'Fair Isle with Skis':{psd:'Faire Isle With Skis.bmp',autoPalette:true,zones:[{font:'GARA_BD.TTF',cx:249,cy:518,w:193,h:31,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:25,uppercase:true}]},
       'Herringbone Initials':{psd:'Herringbone Initials.bmp',autoPalette:true,zones:[{font:'GARA_BD.TTF',cx:443,cy:456,w:70,h:28,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:23,uppercase:true}]},
       'Herringbone Name':{psd:'Herringbone Name.bmp',autoPalette:true,zones:[{font:'GARAMONDPREMRPRO-SMBD',cx:250,cy:489,w:123,h:30,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:24,uppercase:true}]},
-      'Herringbone Stripe':{psd:'Herringbone Stripe.bmp',autoPalette:true,zones:[{font:'Gotham',cx:50,cy:520,w:300,h:50,angle:90.0,color:[255,255,255,255],mode:'fit',forceSize:22}]},
+      'Herringbone Stripe':{psd:'Herringbone Stripe.bmp',autoPalette:true,zones:[{font:'Gotham',cx:50,cy:370,w:300,h:50,angle:90.0,color:[255,255,255,255],mode:'fit',forceSize:22}]},
       'Houndstooth Horse Bit':{psd:'Houndstooth HorseBit.bmp',autoPalette:true,zones:[{font:'CHEROKEE',cx:249,cy:512,w:237,h:52,angle:0.0,color:'dkgrey',mode:'fit',forceSize:40,uppercase:true}]},
       'Housewarming':{psd:'Housewarming.bmp',autoPalette:true,zones:[{font:'Acherus Grotesque Regular',cx:404,cy:504,w:143,h:30,angle:0.0,color:'dkgrey',mode:'fit',forceSize:24}]},
       'Kid Herringbone':{psd:'KidHerringbone.bmp',autoPalette:true,zones:[{font:'Gotham',cx:200,cy:396,w:148,h:23,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:21,uppercase:true}]},
@@ -933,6 +933,7 @@ async function psdToCanvas(buffer,filename){
         const canvas=document.createElement('canvas');
         canvas.width=img.width;canvas.height=img.height;
         const ctx=canvas.getContext('2d');
+        ctx.imageSmoothingEnabled=false;
         ctx.fillStyle='#ffffff';
         ctx.fillRect(0,0,img.width,img.height);
         ctx.drawImage(img,0,0);
@@ -1404,21 +1405,38 @@ async function renderOneTemplate(mapping, rawName, fontOverride){
   // Pre-extract palette from BLANK canvas (before text) — used only to compute
   // lightestColor/dkGreyColor sentinels, since those need to reflect the
   // template's own colors, not the text we're about to add.
-  let blankPalette = mapping.palette||[];
-  if(mapping.autoPalette){
-    const bctx=canvas.getContext('2d');
-    const bid=bctx.getImageData(0,0,canvas.width,canvas.height);
-    const bd=bid.data;
-    const bseen=new Map();
-    for(let i=0;i<bd.length;i+=4){
-      const key=`${bd[i]},${bd[i+1]},${bd[i+2]}`;
-      if(!bseen.has(key)) bseen.set(key,[bd[i],bd[i+1],bd[i+2]]);
+  // Use frequency-based dominant colors (not every unique RGB) since BMP edge
+  // anti-aliasing produces dozens of near-duplicate greys that aren't real
+  // design colors and would otherwise corrupt the indexed export palette.
+  function extractDominantColors(ctx,w,h,maxColors){
+    const id=ctx.getImageData(0,0,w,h);
+    const d=id.data;
+    const counts=new Map();
+    for(let i=0;i<d.length;i+=4){
+      const key=`${d[i]},${d[i+1]},${d[i+2]}`;
+      counts.set(key,(counts.get(key)||0)+1);
     }
-    blankPalette=[...bseen.values()].sort((a,b)=>{
+    const sorted=[...counts.entries()].sort((a,b)=>b[1]-a[1]);
+    const dominant=[];
+    const minPixels=Math.max(4,Math.floor((w*h)*0.002)); // ignore colors under 0.2% of pixels (AA noise)
+    for(const [key,count] of sorted){
+      if(count<minPixels && dominant.length>=2) continue; // always keep at least top 2
+      const rgb=key.split(',').map(Number);
+      // Merge into existing dominant color if very close (anti-alias remnant)
+      const isDup=dominant.some(c=>Math.abs(c[0]-rgb[0])<12&&Math.abs(c[1]-rgb[1])<12&&Math.abs(c[2]-rgb[2])<12);
+      if(!isDup) dominant.push(rgb);
+      if(dominant.length>=maxColors) break;
+    }
+    return dominant.sort((a,b)=>{
       const la=0.299*a[0]+0.587*a[1]+0.114*a[2];
       const lb=0.299*b[0]+0.587*b[1]+0.114*b[2];
       return lb-la;
     });
+  }
+
+  let blankPalette = mapping.palette||[];
+  if(mapping.autoPalette){
+    blankPalette = extractDominantColors(canvas.getContext('2d'),canvas.width,canvas.height,4);
   }
 
   const baseName=rawName.trim().charAt(0).toUpperCase()+rawName.trim().slice(1).toLowerCase();
@@ -1440,6 +1458,7 @@ async function renderOneTemplate(mapping, rawName, fontOverride){
     const lb=0.299*b[0]+0.587*b[1]+0.114*b[2];
     return la<=lb?a:b;
   },[100,100,100]);
+  const usedTextColors=[];
   for(const zone of resolvedZones){
     const display=zone.uppercase?baseName.toUpperCase():zone.lowercase?baseName.toLowerCase():baseName;
     // Resolve color: 'dkgrey' → darkest non-black palette color; arrays used as-is
@@ -1449,24 +1468,22 @@ async function renderOneTemplate(mapping, rawName, fontOverride){
     } else {
       resolvedColor=zone.color;
     }
+    usedTextColors.push([resolvedColor[0],resolvedColor[1],resolvedColor[2]]);
     const enrichedZone=Object.assign({},zone,{antialias:!!mapping.antialias,palette:blankPalette,color:resolvedColor});
     renderTextZone(canvas,display,enrichedZone,lookupFont(zone.font));
   }
 
-  // Final palette for TIF export: extract from the FINISHED canvas (with text already
-  // drawn) so the exact text color is guaranteed to be present — avoids the text
-  // snapping to the nearest unrelated color during indexed-TIF quantization.
+  // Final palette for TIF export: dominant colors from the finished canvas (with text
+  // already drawn), guaranteeing the exact text color(s) are explicitly included so
+  // they never snap to an unrelated nearby shade during indexed-TIF quantization.
   let finalPalette = mapping.palette||[];
   if(mapping.autoPalette){
-    const fctx=canvas.getContext('2d');
-    const fid=fctx.getImageData(0,0,canvas.width,canvas.height);
-    const fd=fid.data;
-    const fseen=new Map();
-    for(let i=0;i<fd.length;i+=4){
-      const key=`${fd[i]},${fd[i+1]},${fd[i+2]}`;
-      if(!fseen.has(key)) fseen.set(key,[fd[i],fd[i+1],fd[i+2]]);
+    finalPalette = extractDominantColors(canvas.getContext('2d'),canvas.width,canvas.height,4);
+    for(const tc of usedTextColors){
+      const exists=finalPalette.some(c=>Math.abs(c[0]-tc[0])<8&&Math.abs(c[1]-tc[1])<8&&Math.abs(c[2]-tc[2])<8);
+      if(!exists) finalPalette.push(tc);
     }
-    finalPalette=[...fseen.values()].sort((a,b)=>{
+    finalPalette.sort((a,b)=>{
       const la=0.299*a[0]+0.587*a[1]+0.114*a[2];
       const lb=0.299*b[0]+0.587*b[1]+0.114*b[2];
       return lb-la;
