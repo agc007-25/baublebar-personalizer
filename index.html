@@ -540,7 +540,7 @@ const CLIENT_REGISTRY = {
       'Baby Rabbits':{psd:'Baby Rabbits.bmp',autoPalette:true,zones:[{font:'Chalkboard-Regular',cx:152,cy:49,w:302,h:53,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:40,lowercase:true}]},
       'Baby Sleep Tight':{psd:'Baby SleepTight.bmp',autoPalette:true,zones:[{font:'COMIC',cx:198,cy:245,w:224,h:40,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:35,lowercase:true}]},
       'Baby Sun Moon Stars Milestone':{psd:'Baby SunMoonStars.bmp',autoPalette:true,zones:[{font:'Helvetica-World-Regular',cx:331,cy:248,w:94,h:29,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:21,uppercase:true}]},
-      'Baby Trucks':{psd:'Baby Trucks.bmp',autoPalette:true,zones:[{font:'Kiddosy Regular.ttf',cx:150,cy:180,w:234,h:52,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:48,lowercase:true}]},
+      'Baby Trucks':{psd:'Baby Trucks.bmp',autoPalette:true,zones:[{font:'Kiddosy Regular.ttf',cx:150,cy:180,w:234,h:52,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:48,lowercase:true,letterSpacing:6}]},
       'Baby Typewriter':{psd:'Baby Typewriter.bmp',autoPalette:true,zones:[{font:'COURIER.TTF',cx:102,cy:252,w:130,h:32,angle:0.0,color:'dkgrey',mode:'fit',forceSize:20,uppercase:true}]},
       'BabyHerringbone':{psd:'Baby Herringbone.bmp',autoPalette:true,zones:[{font:'Gotham',cx:154,cy:300,w:124,h:26,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:21,uppercase:true}]},
       'Bold Values':{psd:'Bold Values.bmp',autoPalette:true,zones:[{font:'ARIALBI',cx:354,cy:332,w:399,h:43,angle:0.0,color:'dkgrey',mode:'fit',forceSize:36,uppercase:true}]},
@@ -578,11 +578,11 @@ const CLIENT_REGISTRY = {
     label:       'Butterscotch',
     driveFolder: '1WotRsjXmJ8J9z2If6ecAkPNJsaHfxyar',
     columns: {
-      orderNum: 'Order Number',
-      name:     'name',
-      style:    'style',
-      size:     'size',
-      font:     'font',  // Butterscotch: font comes from spreadsheet per order
+      orderNum: 'Reference',
+      name:     'Line 1',
+      style:    'Product',
+      size:     null,
+      font:     'Font',  // Butterscotch: font comes from spreadsheet per order
       caseMode: 'Font Case',  // Butterscotch: font case (Proper/CAPS/Lower) comes from spreadsheet per order
       designValue: 'Design 1/Value',  // Butterscotch/Odoo export: combined with Product's size prefix to form template key (e.g. SB-80)
     },
@@ -1001,7 +1001,8 @@ function getFontSize(display,faceName,zone){
   else{aw=w*0.93;ah=h*0.93;}
   for(let sz=300;sz>=6;sz--){
     ctx.font=`${sz}px "${faceName}"`;
-    const tw=ctx.measureText(display).width;
+    let tw=ctx.measureText(display).width;
+    if(zone.letterSpacing) tw+=zone.letterSpacing*Math.max(0,display.length-1);
     const th=sz*0.85;
     if(tw<=aw&&th<=ah){
       if(zone.forceMin&&sz<zone.forceMin)return zone.forceMin;
@@ -1145,7 +1146,18 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   octx.fillStyle=`rgb(${drawR},${drawG},${drawB})`;
   octx.textBaseline='top';
   octx.textAlign='left';
-  octx.fillText(display,pad,pad);
+  if(zone.letterSpacing){
+    // Manual per-character draw with extra spacing — default fillText advance
+    // widths are too tight for some display fonts at larger sizes.
+    const extraPx=zone.letterSpacing*SCALE;
+    let cx2=pad;
+    for(const ch of display){
+      octx.fillText(ch,cx2,pad);
+      cx2+=octx.measureText(ch).width+extraPx;
+    }
+  } else {
+    octx.fillText(display,pad,pad);
+  }
 
   // Threshold — snap to text color or transparent
   const id=octx.getImageData(0,0,off.width,off.height);
@@ -1280,12 +1292,15 @@ function renderTextZone(mainCanvas,display,zone,faceName){
       // Anchor the bottom-most ink pixel (first letter, for 90°-rotated text)
       // to a fixed Y coordinate, so it never moves regardless of name length.
       const fd=final.getContext('2d').getImageData(0,0,final.width,final.height).data;
+      const isWhiteZoneText=(zone.color[0]===255&&zone.color[1]===255&&zone.color[2]===255);
       let inkBottom=0;
       for(let y=final.height-1;y>=0;y--){
         let found=false;
         for(let x=0;x<final.width;x++){
           const i=(y*final.width+x)*4;
-          if(fd[i+3]>0&&!(fd[i]===255&&fd[i+1]===255&&fd[i+2]===255)){found=true;break;}
+          // Ink = any opaque pixel. For white text, alpha alone identifies it
+          // (color check would wrongly exclude legitimate white text pixels).
+          if(isWhiteZoneText ? fd[i+3]>0 : (fd[i+3]>0&&!(fd[i]===255&&fd[i+1]===255&&fd[i+2]===255))){found=true;break;}
         }
         if(found){inkBottom=y;break;}
       }
