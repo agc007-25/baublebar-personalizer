@@ -322,6 +322,14 @@ tr:hover td{background:rgba(0,0,0,.03);}
       <div class="field-group"><label>Font (override, optional)</label>
         <input type="text" id="qtFont" placeholder="leave blank to use template default">
       </div>
+      <div class="field-group" id="qtCaseGroup" style="display:none"><label>Font Case (Butterscotch)</label>
+        <select id="qtCase">
+          <option value="">Template default</option>
+          <option value="proper">Proper</option>
+          <option value="caps">CAPS</option>
+          <option value="lower">lower</option>
+        </select>
+      </div>
     </div>
     <button class="cal-btn" id="qtBtn" onclick="runQuickTest()">GENERATE TEST</button>
     <div class="cal-result" id="qtResult" style="display:none">
@@ -575,6 +583,7 @@ const CLIENT_REGISTRY = {
       style:    'style',
       size:     'size',
       font:     'font',  // Butterscotch: font comes from spreadsheet per order
+      caseMode: 'case',  // Butterscotch: font case (Proper/CAPS/Lower) comes from spreadsheet per order
     },
     sizeFilter: [],
     templates: {
@@ -782,6 +791,7 @@ function handleXlsx(file){
           style:(r[cols.style]||'').toString().trim(),
           size:(r[cols.size]||'').toString().trim(),
           font:cols.font?(r[cols.font]||'').toString().trim():'',
+          caseMode:cols.caseMode?(r[cols.caseMode]||'').toString().trim():'',
         }));
       document.getElementById('xlsxPills').innerHTML=
         `<div class="pill"><span class="pdot ok"></span>${file.name} — ${orders.length} orders</div>`;
@@ -1405,7 +1415,7 @@ function getTemplate(order){
 // + name + optional font override into a finished canvas. Keeping this single
 // source of truth guarantees Quick Test results always match real batch runs.
 // ─────────────────────────────────────────────────────────────────────────────
-async function renderOneTemplate(mapping, rawName, fontOverride){
+async function renderOneTemplate(mapping, rawName, fontOverride, caseOverride){
   const resolvedZones = mapping.zones.map(z=>{
     if(fontOverride && lookupFont(fontOverride)) return Object.assign({},z,{font:fontOverride});
     return z;
@@ -1474,7 +1484,11 @@ async function renderOneTemplate(mapping, rawName, fontOverride){
   },[100,100,100]);
   const usedTextColors=[];
   for(const zone of resolvedZones){
-    const display=zone.uppercase?baseName.toUpperCase():zone.lowercase?baseName.toLowerCase():baseName;
+    let display;
+    if(caseOverride==='caps') display=baseName.toUpperCase();
+    else if(caseOverride==='lower') display=baseName.toLowerCase();
+    else if(caseOverride==='proper') display=baseName;
+    else display=zone.uppercase?baseName.toUpperCase():zone.lowercase?baseName.toLowerCase():baseName;
     // Resolve color: 'dkgrey' → darkest non-black palette color; arrays used as-is
     let resolvedColor;
     if(zone.color==='dkgrey'){
@@ -1514,6 +1528,8 @@ function qtPopulateTemplates(){
   const sel=document.getElementById('qtTemplate');
   if(!sel)return;
   sel.innerHTML='<option value="">— Select a template —</option>';
+  const caseGroup=document.getElementById('qtCaseGroup');
+  if(caseGroup) caseGroup.style.display=(activeClient==='Butterscotch')?'block':'none';
   if(!activeClient || !CLIENT_REGISTRY[activeClient]) return;
   const names=Object.keys(CLIENT_REGISTRY[activeClient].templates).sort();
   for(const n of names){
@@ -1584,6 +1600,7 @@ async function runQuickTest(){
   const key=document.getElementById('qtTemplate').value;
   const name=document.getElementById('qtName').value.trim();
   const fontOverride=document.getElementById('qtFont').value.trim();
+  const caseOverride=document.getElementById('qtCase')?document.getElementById('qtCase').value:'';
   const resultBox=document.getElementById('qtResult');
   const btn=document.getElementById('qtBtn');
 
@@ -1594,7 +1611,7 @@ async function runQuickTest(){
   const mapping=CLIENT_REGISTRY[activeClient].templates[key];
   btn.disabled=true; btn.textContent='RENDERING...';
   try{
-    const {canvas, palette}=await renderOneTemplate(mapping, name, fontOverride||null);
+    const {canvas, palette}=await renderOneTemplate(mapping, name, fontOverride||null, caseOverride||null);
     qtLastRender={canvas, mapping, palette};
     resultBox.style.display='block';
     qtRedrawOverlay();
@@ -1644,7 +1661,11 @@ async function processAll(){
     const mapping=getTemplate(o);
     if(!mapping){setRow(i,'skipped',`No template for "${o.style} / ${o.size}"`);results.push({status:'skipped',reason:`No template for "${o.style} / ${o.size}"`});log(`⚠ Skipped ${outName} — no template for "${o.style} / ${o.size}"`,'warn');skipped++;continue;}
     try{
-      const {canvas, palette}=await renderOneTemplate(mapping, o.name, o.font);
+      const normalizedCase = (o.caseMode||'').toLowerCase().includes('cap') ? 'caps'
+        : (o.caseMode||'').toLowerCase().includes('low') ? 'lower'
+        : (o.caseMode||'').toLowerCase().includes('proper') ? 'proper'
+        : null;
+      const {canvas, palette}=await renderOneTemplate(mapping, o.name, o.font, normalizedCase);
       zip.file(outName,canvasToTIF(canvas,palette));
       setRow(i,'created');results.push({status:'created'});log(`✅ ${outName}`,'ok');created++;
     }catch(err){
