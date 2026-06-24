@@ -583,7 +583,8 @@ const CLIENT_REGISTRY = {
       style:    'style',
       size:     'size',
       font:     'font',  // Butterscotch: font comes from spreadsheet per order
-      caseMode: 'case',  // Butterscotch: font case (Proper/CAPS/Lower) comes from spreadsheet per order
+      caseMode: 'Font Case',  // Butterscotch: font case (Proper/CAPS/Lower) comes from spreadsheet per order
+      designValue: 'Design 1/Value',  // Butterscotch/Odoo export: combined with Product's size prefix to form template key (e.g. SB-80)
     },
     sizeFilter: [],
     templates: {
@@ -785,14 +786,27 @@ function handleXlsx(file){
           const sz=(r[cols.size]||'').toString().toLowerCase();
           return sizeFilter.some(f=>sz.includes(f));
         })
-        .map(r=>({
+        .map(r=>{
+          // Butterscotch/Odoo export: Product column has size+fiber code (e.g. "SB-AC", "SB-AC/M", "BB-AC")
+          // and Design 1/Value has the template number (e.g. "80"). Extract the leading size
+          // prefix (before the first "-") from Product and combine with the design number to
+          // get the registry key, e.g. "SB-80". Fiber code (AC/MW/etc.) is intentionally discarded
+          // here — it's used elsewhere for yarn/material selection, not template matching.
+          let style=(r[cols.style]||'').toString().trim();
+          if(cols.designValue && r[cols.designValue]!=null && r[cols.designValue]!==''){
+            const productRaw=(r[cols.style]||'').toString().trim();
+            const sizePrefix=productRaw.split('-')[0].trim(); // "SB-AC" -> "SB", "BB-AC" -> "BB"
+            const designNum=(r[cols.designValue]||'').toString().trim();
+            if(sizePrefix && designNum) style=`${sizePrefix}-${designNum}`;
+          }
+          return{
           orderNum:(r[cols.orderNum]||'').toString().trim(),
           name:(r[cols.name]||'').toString().trim(),
-          style:(r[cols.style]||'').toString().trim(),
+          style:style,
           size:(r[cols.size]||'').toString().trim(),
           font:cols.font?(r[cols.font]||'').toString().trim():'',
           caseMode:cols.caseMode?(r[cols.caseMode]||'').toString().trim():'',
-        }));
+        };});
       document.getElementById('xlsxPills').innerHTML=
         `<div class="pill"><span class="pdot ok"></span>${file.name} — ${orders.length} orders</div>`;
       window.spreadsheetBaseName=file.name.replace(/\.[^.]+$/,'');
