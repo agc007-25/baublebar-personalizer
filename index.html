@@ -1233,8 +1233,28 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   const small=document.createElement('canvas');
   small.width=Math.ceil(rotated8.width/SCALE);small.height=Math.ceil(rotated8.height/SCALE);
   const sctx=small.getContext('2d');
-  sctx.imageSmoothingEnabled=false;
+  // Use smoothing (area averaging) for the downscale, not nearest-neighbor —
+  // nearest-neighbor on an 8x->1x reduction samples only 1 of 8 source pixels,
+  // which can skip thin strokes/serifs entirely and erode glyph weight. Area
+  // averaging correctly blends all 8 source pixels, then we re-threshold below
+  // to snap back to clean binary (text color or transparent) — no grey survives.
+  sctx.imageSmoothingEnabled=true;
+  sctx.imageSmoothingQuality='high';
   sctx.drawImage(rotated8,0,0,small.width,small.height);
+
+  // Re-threshold after smoothed downscale: a pixel that was >=50% covered by
+  // ink in the source becomes full ink; otherwise transparent. This preserves
+  // thin strokes that nearest-neighbor was dropping, without leaving any
+  // semi-transparent/grey edge pixels in the final binary output.
+  {
+    const did=sctx.getImageData(0,0,small.width,small.height);
+    const dd=did.data;
+    for(let i=0;i<dd.length;i+=4){
+      if(dd[i+3]>=128){dd[i]=r;dd[i+1]=g;dd[i+2]=b;dd[i+3]=255;}
+      else{dd[i]=255;dd[i+1]=255;dd[i+2]=255;dd[i+3]=0;}
+    }
+    sctx.putImageData(did,0,0);
+  }
 
   // Cleanup pass — remove isolated non-white pixels (stray pixels with no non-white neighbors)
   const cid=sctx.getImageData(0,0,small.width,small.height);
