@@ -540,7 +540,7 @@ const CLIENT_REGISTRY = {
       'Baby Rabbits':{psd:'Baby Rabbits.bmp',autoPalette:true,zones:[{font:'Chalkboard-Regular',cx:152,cy:49,w:302,h:53,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:40,lowercase:true}]},
       'Baby Sleep Tight':{psd:'Baby SleepTight.bmp',autoPalette:true,zones:[{font:'COMIC',cx:198,cy:245,w:224,h:40,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:35,lowercase:true}]},
       'Baby Sun Moon Stars Milestone':{psd:'Baby SunMoonStars.bmp',autoPalette:true,zones:[{font:'Helvetica-World-Regular',cx:331,cy:248,w:94,h:29,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:21,uppercase:true}]},
-      'Baby Trucks':{psd:'Baby Trucks.bmp',autoPalette:true,zones:[{font:'Kiddosy Regular.ttf',cx:150,cy:180,w:234,h:52,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:48,lowercase:true,letterSpacing:6}]},
+      'Baby Trucks':{psd:'Baby Trucks.bmp',autoPalette:true,zones:[{font:'Kiddosy Regular.ttf',cx:150,cy:180,w:234,h:52,angle:0.0,color:[0,0,0,255],mode:'fit',forceSize:48,lowercase:true}]},
       'Baby Typewriter':{psd:'Baby Typewriter.bmp',autoPalette:true,zones:[{font:'COURIER.TTF',cx:102,cy:252,w:130,h:32,angle:0.0,color:'dkgrey',mode:'fit',forceSize:20,uppercase:true}]},
       'BabyHerringbone':{psd:'Baby Herringbone.bmp',autoPalette:true,zones:[{font:'Gotham',cx:154,cy:300,w:124,h:26,angle:0.0,color:[255,255,255,255],mode:'fit',forceSize:21,uppercase:true}]},
       'Bold Values':{psd:'Bold Values.bmp',autoPalette:true,zones:[{font:'ARIALBI',cx:354,cy:332,w:399,h:43,angle:0.0,color:'dkgrey',mode:'fit',forceSize:36,uppercase:true}]},
@@ -722,6 +722,15 @@ function lookupFont(name){
   for(const ext of ['.ttf','.otf','.TTF','.OTF']){
     if(fontFaces[nk+ext]) return fontFaces[nk+ext];
     if(fontFaces[name.replace(/\s+/g,'_')+ext]) return fontFaces[name.replace(/\s+/g,'_')+ext];
+  }
+  // Case-insensitive fallback — registered Drive filenames may differ in
+  // case from the config's font name (e.g. "Kiddosy Regular.ttf" vs the
+  // actual uploaded "KIDDOSY_REGULAR.TTF"). Compare normalized forms
+  // (lowercase, extension stripped, spaces/underscores unified).
+  const normalize=s=>s.toLowerCase().replace(/\.(ttf|otf)$/,'').replace(/[\s_]+/g,'_');
+  const targetNorm=normalize(name);
+  for(const key in fontFaces){
+    if(normalize(key)===targetNorm) return fontFaces[key];
   }
   return null;
 }
@@ -1130,7 +1139,8 @@ function renderTextZone(mainCanvas,display,zone,faceName){
   const meas=document.createElement('canvas');meas.width=6000;meas.height=1000;
   const mctx=meas.getContext('2d');
   mctx.font=`${fontSize*SCALE}px "${faceName}"`;
-  const tw=Math.ceil(mctx.measureText(display).width);
+  let tw=Math.ceil(mctx.measureText(display).width);
+  if(zone.letterSpacing) tw+=Math.ceil(zone.letterSpacing*SCALE*Math.max(0,display.length-1));
   const th=Math.ceil(fontSize*SCALE*1.2);
   const pad=SCALE*8;
 
