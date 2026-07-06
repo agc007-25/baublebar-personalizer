@@ -330,6 +330,14 @@ tr:hover td{background:rgba(0,0,0,.03);}
           <option value="lower">lower</option>
         </select>
       </div>
+      <div class="field-group" id="qtSizeGroup" style="display:none"><label>Size (Butterscotch)</label>
+        <select id="qtSize">
+          <option value="SB">SB (132×126)</option>
+          <option value="BB">BB (222×221)</option>
+          <option value="LBB">LBB (318×275)</option>
+          <option value="XLBB">XLBB (370×364)</option>
+        </select>
+      </div>
     </div>
     <button class="cal-btn" id="qtBtn" onclick="runQuickTest()">GENERATE TEST</button>
     <div class="cal-result" id="qtResult" style="display:none">
@@ -582,11 +590,19 @@ const CLIENT_REGISTRY = {
       name:     'Line 1',
       style:    'Product',
       size:     null,
-      font:     'Font',  // Butterscotch: font comes from spreadsheet per order
-      caseMode: 'Font Case',  // Butterscotch: font case (Proper/CAPS/Lower) comes from spreadsheet per order
-      designValue: 'Design 1/Value',  // Butterscotch/Odoo export: combined with Product's size prefix to form template key (e.g. SB-80)
+      font:     'Font',
+      caseMode: 'Font Case',
+      designValue: 'Design 1/Value',
     },
     sizeFilter: [],
+    // Scale factors relative to SB base (132×126).
+    // cx,cy,w,h in templates are SB pixels; renderer scales to target size at runtime.
+    sizes: {
+      'SB':  {w:132, h:126, scaleX:1.000, scaleY:1.000},
+      'BB':  {w:222, h:221, scaleX:1.682, scaleY:1.754},
+      'LBB': {w:318, h:275, scaleX:2.409, scaleY:2.183},
+      'XLBB':{w:370, h:364, scaleX:2.803, scaleY:2.889},
+    },
     templates: {
       'SB-10':{psd:'SB-10.bmp',palette:[[42,7,252],[0,0,0]],zones:[{font:'ANTIQUE ROMAN.TTF',cx:66,cy:22,w:108,h:22,angle:0,color:[0,0,0,255],mode:'fit'}]},
       'SB-101':{psd:'SB-101.bmp',palette:[[42,7,252],[0,0,0]],zones:[{font:'ANTIQUE ROMAN.TTF',cx:66,cy:12,w:126,h:17,angle:0,color:[0,0,0,255],mode:'fit'}]},
@@ -802,9 +818,10 @@ function handleXlsx(file){
           // get the registry key, e.g. "SB-80". Fiber code (AC/MW/etc.) is intentionally discarded
           // here — it's used elsewhere for yarn/material selection, not template matching.
           let style=(r[cols.style]||'').toString().trim();
+          let sizePrefix='SB';
           if(cols.designValue && r[cols.designValue]!=null && r[cols.designValue]!==''){
             const productRaw=(r[cols.style]||'').toString().trim();
-            const sizePrefix=productRaw.split('-')[0].trim(); // "SB-AC" -> "SB", "BB-AC" -> "BB"
+            sizePrefix=productRaw.split('-')[0].trim();
             const designNum=(r[cols.designValue]||'').toString().trim();
             if(sizePrefix && designNum) style=`${sizePrefix}-${designNum}`;
           }
@@ -813,6 +830,7 @@ function handleXlsx(file){
           name:(r[cols.name]||'').toString().trim(),
           style:style,
           size:(r[cols.size]||'').toString().trim(),
+          sizePrefix:sizePrefix,
           font:cols.font?(r[cols.font]||'').toString().trim():'',
           caseMode:cols.caseMode?(r[cols.caseMode]||'').toString().trim():'',
         };});
@@ -1475,16 +1493,49 @@ function getTemplate(order){
 // + name + optional font override into a finished canvas. Keeping this single
 // source of truth guarantees Quick Test results always match real batch runs.
 // ─────────────────────────────────────────────────────────────────────────────
-async function renderOneTemplate(mapping, rawName, fontOverride, caseOverride){
+async function renderOneTemplate(mapping, rawName, fontOverride, caseOverride, sizePrefix){
+  // Butterscotch size scaling — look up scale factors from the client's sizes table
+  // and apply them to both the canvas dimensions and all zone coordinates.
+  // Other clients have no sizes table so scaleX/scaleY default to 1.
+  let scaleX=1, scaleY=1, targetW=null, targetH=null;
+  if(sizePrefix && activeClient && CLIENT_REGISTRY[activeClient].sizes){
+    const sizeInfo=CLIENT_REGISTRY[activeClient].sizes[sizePrefix];
+    if(sizeInfo){scaleX=sizeInfo.scaleX;scaleY=sizeInfo.scaleY;targetW=sizeInfo.w;targetH=sizeInfo.h;}
+  }
   const resolvedZones = mapping.zones.map(z=>{
-    if(fontOverride && lookupFont(fontOverride)) return Object.assign({},z,{font:fontOverride});
-    return z;
+    // Apply font override if present
+    let zone=z;
+    if(fontOverride && lookupFont(fontOverride)) zone=Object.assign({},z,{font:fontOverride});
+    // Apply size scaling to all coordinate/dimension fields
+    if(scaleX!==1||scaleY!==1){
+      zone=Object.assign({},zone,{
+        cx: zone.cx!=null ? Math.round(zone.cx*scaleX) : null,
+        cy: Math.round(zone.cy*scaleY),
+        w:  Math.round(zone.w*scaleX),
+        h:  Math.round(zone.h*scaleY),
+      });
+      if(zone.forceMax) zone=Object.assign({},zone,{forceMax:Math.round(zone.forceMax*Math.min(scaleX,scaleY))});
+      if(zone.forceSize) zone=Object.assign({},zone,{forceSize:Math.round(zone.forceSize*Math.min(scaleX,scaleY))});
+      if(zone.rightEdge) zone=Object.assign({},zone,{rightEdge:Math.round(zone.rightEdge*scaleX)});
+      if(zone.bottomY) zone=Object.assign({},zone,{bottomY:Math.round(zone.bottomY*scaleY)});
+    }
+    return zone;
   });
   const mf=resolvedZones.find(z=>!lookupFont(z.font));
   if(mf){ throw new Error(`Font not loaded: ${mf.font} (tried key: ${fontKey(mf.font)})`); }
   if(!psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')]){ throw new Error(`PSD not loaded: ${mapping.psd}`); }
 
-  const canvas=await psdToCanvas(psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')],mapping.psd);
+  const sbCanvas=await psdToCanvas(psdFiles[mapping.psd.toLowerCase().replace(/\s+/g,'_')],mapping.psd);
+  // Scale up canvas if this is a larger size (BB, LBB, XLBB)
+  let canvas=sbCanvas;
+  if(targetW && targetH && (targetW!==sbCanvas.width || targetH!==sbCanvas.height)){
+    const scaled=document.createElement('canvas');
+    scaled.width=targetW; scaled.height=targetH;
+    const sctx2=scaled.getContext('2d');
+    sctx2.imageSmoothingEnabled=false; // nearest-neighbor upscale preserves pixel-art integrity
+    sctx2.drawImage(sbCanvas,0,0,targetW,targetH);
+    canvas=scaled;
+  }
 
   // Pre-extract palette from BLANK canvas (before text) — used only to compute
   // lightestColor/dkGreyColor sentinels, since those need to reflect the
@@ -1590,6 +1641,8 @@ function qtPopulateTemplates(){
   sel.innerHTML='<option value="">— Select a template —</option>';
   const caseGroup=document.getElementById('qtCaseGroup');
   if(caseGroup) caseGroup.style.display=(activeClient==='Butterscotch')?'block':'none';
+  const sizeGroup=document.getElementById('qtSizeGroup');
+  if(sizeGroup) sizeGroup.style.display=(activeClient==='Butterscotch')?'block':'none';
   if(!activeClient || !CLIENT_REGISTRY[activeClient]) return;
   const names=Object.keys(CLIENT_REGISTRY[activeClient].templates).sort();
   for(const n of names){
@@ -1661,6 +1714,7 @@ async function runQuickTest(){
   const name=document.getElementById('qtName').value.trim();
   const fontOverride=document.getElementById('qtFont').value.trim();
   const caseOverride=document.getElementById('qtCase')?document.getElementById('qtCase').value:'';
+  const qtSizeVal=document.getElementById('qtSize')?document.getElementById('qtSize').value:'SB';
   const resultBox=document.getElementById('qtResult');
   const btn=document.getElementById('qtBtn');
 
@@ -1671,7 +1725,7 @@ async function runQuickTest(){
   const mapping=CLIENT_REGISTRY[activeClient].templates[key];
   btn.disabled=true; btn.textContent='RENDERING...';
   try{
-    const {canvas, palette}=await renderOneTemplate(mapping, name, fontOverride||null, caseOverride||null);
+    const {canvas, palette}=await renderOneTemplate(mapping, name, fontOverride||null, caseOverride||null, qtSizeVal||'SB');
     qtLastRender={canvas, mapping, palette};
     resultBox.style.display='block';
     qtRedrawOverlay();
@@ -1725,7 +1779,7 @@ async function processAll(){
         : (o.caseMode||'').toLowerCase().includes('low') ? 'lower'
         : (o.caseMode||'').toLowerCase().includes('proper') ? 'proper'
         : null;
-      const {canvas, palette}=await renderOneTemplate(mapping, o.name, o.font, normalizedCase);
+      const {canvas, palette}=await renderOneTemplate(mapping, o.name, o.font, normalizedCase, o.sizePrefix||'SB');
       zip.file(outName,canvasToTIF(canvas,palette));
       setRow(i,'created');results.push({status:'created'});log(`✅ ${outName}`,'ok');created++;
     }catch(err){
