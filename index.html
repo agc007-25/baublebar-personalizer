@@ -1580,7 +1580,11 @@ async function renderOneTemplate(mapping, rawName, fontOverride, caseOverride, s
     blankPalette = extractDominantColors(canvas.getContext('2d'),canvas.width,canvas.height,4);
   }
 
-  const baseName=rawName.trim().charAt(0).toUpperCase()+rawName.trim().slice(1).toLowerCase();
+  // In2Green: use name exactly as provided in spreadsheet — no case conversion
+  // All other clients: convert to proper case as the baseline before zone flags apply
+  const baseName = activeClient==='In2Green'
+    ? rawName.trim()
+    : rawName.trim().charAt(0).toUpperCase()+rawName.trim().slice(1).toLowerCase();
 
   // Compute lightest non-white color (for autoLightest sentinel [255,255,255,255])
   const paletteForLightest = (activeClient==='In2Green')
@@ -1604,7 +1608,8 @@ async function renderOneTemplate(mapping, rawName, fontOverride, caseOverride, s
     let display;
     if(caseOverride==='caps') display=baseName.toUpperCase();
     else if(caseOverride==='lower') display=baseName.toLowerCase();
-    else if(caseOverride==='proper') display=baseName;
+    else if(caseOverride==='proper') display=baseName.charAt(0).toUpperCase()+baseName.slice(1).toLowerCase();
+    else if(activeClient==='In2Green') display=baseName; // use exactly as provided — no zone case flags
     else display=zone.uppercase?baseName.toUpperCase():zone.lowercase?baseName.toLowerCase():baseName;
     // Resolve color: 'dkgrey' → darkest non-black palette color; arrays used as-is
     let resolvedColor;
