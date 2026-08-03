@@ -1630,7 +1630,7 @@ async function renderOneTemplate(mapping, rawName, fontOverride, caseOverride, s
   if(mapping.autoPalette){
     finalPalette = extractDominantColors(canvas.getContext('2d'),canvas.width,canvas.height,4);
     for(const tc of usedTextColors){
-      const exists=finalPalette.some(c=>Math.abs(c[0]-tc[0])<8&&Math.abs(c[1]-tc[1])<8&&Math.abs(c[2]-tc[2])<8);
+      const exists=finalPalette.some(c=>Math.abs(c[0]-tc[0])<12&&Math.abs(c[1]-tc[1])<12&&Math.abs(c[2]-tc[2])<12);
       if(!exists) finalPalette.push(tc);
     }
     finalPalette.sort((a,b)=>{
@@ -1638,6 +1638,10 @@ async function renderOneTemplate(mapping, rawName, fontOverride, caseOverride, s
       const lb=0.299*b[0]+0.587*b[1]+0.114*b[2];
       return lb-la;
     });
+    // Hard cap at 4 — In2Green templates are always 4-color indexed designs.
+    // If the text color guarantee pushed us to 5, drop the least-dominant color
+    // (last after sorting lightest-first, so the most extreme end of the range).
+    if(finalPalette.length>4) finalPalette=finalPalette.slice(0,4);
   }
   return {canvas, palette:finalPalette};
 }
