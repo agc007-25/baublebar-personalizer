@@ -1148,7 +1148,10 @@ function renderTextZone(mainCanvas,display,zone,faceName){
     return;
   }
 
-  const SCALE=8;
+  // Use higher supersampling for small canvases — more source pixels per output pixel
+  // means thin strokes have a much better chance of surviving the downscale threshold.
+  // 132×126 (SB Butterscotch) needs 16x; larger canvases are fine at 8x.
+  const SCALE=mainCanvas.width<=150?16:8;
   const[r,g,b,a]=zone.color;
   // Apply uppercase if zone requests it
   if(zone.uppercase) display=display.toUpperCase();
