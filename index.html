@@ -1271,7 +1271,10 @@ function renderTextZone(mainCanvas,display,zone,faceName){
     const did=sctx.getImageData(0,0,small.width,small.height);
     const dd=did.data;
     for(let i=0;i<dd.length;i+=4){
-      if(dd[i+3]>=128){dd[i]=r;dd[i+1]=g;dd[i+2]=b;dd[i+3]=255;}
+      // Lower threshold for small canvases — 30% ink coverage instead of 50%
+      // so thin serif strokes that only partially cover a pixel still survive.
+      const inkThreshold = mainCanvas.width<=150 ? 77 : 128;
+      if(dd[i+3]>=inkThreshold){dd[i]=r;dd[i+1]=g;dd[i+2]=b;dd[i+3]=255;}
       else{dd[i]=255;dd[i+1]=255;dd[i+2]=255;dd[i+3]=0;}
     }
     sctx.putImageData(did,0,0);
