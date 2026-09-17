@@ -535,7 +535,7 @@ const CLIENT_REGISTRY = {
       // cx = spreadsheet left-edge + w/2 (true center X)
       // cy = spreadsheet top-edge + h/2 (true center Y)
       'Baby Anchor':{psd:'Baby Anchor.bmp',autoPalette:true,zones:[{font:'TRADEGOTHICLTSTD-BOLD',cx:103,cy:313,w:205,h:29,angle:0.0,color:[0,0,0,255],mode:'fit',forceMax:34,uppercase:true}]},
-      'Baby Border':{psd:'Baby Border.bmp',autoPalette:true,zones:[{font:'NeutraDisp-Bold.otf',cx:260,bottomY:320,w:65,h:270,angle:-90.0,color:[255,255,255,255],mode:'bottomAnchor',forceMax:65,uppercase:true}]},
+      'Baby Border':{psd:'Baby Border.bmp',autoPalette:true,zones:[{font:'NeutraDisp-Bold.otf',cx:247,bottomY:321,w:40,h:288,angle:-90.0,color:[255,255,255,255],mode:'bottomAnchor',uppercase:true}]},
       'Baby Dino':{psd:'Baby Dino.bmp',autoPalette:true,zones:[{font:'GARA_BD.TTF',cx:203,cy:254,w:183,h:37,angle:0.0,color:[255,255,255,255],mode:'fit',forceMax:30,uppercase:true}]},
       'Baby Dinosaur':{psd:'Baby Dino.bmp',autoPalette:true,zones:[{font:'GARA_BD.TTF',cx:203,cy:254,w:183,h:37,angle:0.0,color:[255,255,255,255],mode:'fit',forceMax:30,uppercase:true}]},
       'Baby Ducky':{psd:'Baby Ducky.bmp',autoPalette:true,zones:[{font:'TRADEGOTHICLTSTD-BOLD',cx:154,cy:322,w:306,h:27,angle:0.0,color:[255,255,255,255],mode:'fit',forceMax:38}]},
@@ -1023,12 +1023,22 @@ function getFontSize(display,faceName,zone){
   const tmp=document.createElement('canvas');tmp.width=3000;tmp.height=400;
   const ctx=tmp.getContext('2d');
   const w=zone.w,h=zone.h,angle=zone.angle,mode=zone.mode;
+  // For rotated zones (angle not 0/180): w becomes the letter HEIGHT constraint
+  // and h becomes the run LENGTH constraint — swap aw/ah accordingly.
+  const isRotated = angle && Math.abs(angle)%180 !== 0;
   let aw,ah;
-  if(mode==='fit'){aw=w*0.93;ah=h*0.93;}
+  if(mode==='fit'){
+    aw=isRotated ? h*0.93 : w*0.93;
+    ah=isRotated ? w*0.93 : h*0.93;
+  }
   else if(mode==='height'){aw=99999;ah=h*(zone.hm||0.45);}
   else if(mode==='width'){aw=w*(zone.wm||0.90);ah=99999;}
   else if(mode==='diag'){const l=Math.max(w,h);const s=Math.min(w,h);aw=l*0.90;ah=s*0.90;}
-  else{aw=w*0.93;ah=h*0.93;}
+  else{
+    // bottomAnchor and other modes with rotation — same swap logic
+    aw=isRotated ? h*0.93 : w*0.93;
+    ah=isRotated ? w*0.93 : h*0.93;
+  }
   const startSz=zone.forceMax||300;
   for(let sz=startSz;sz>=6;sz--){
     ctx.font=`${sz}px "${faceName}"`;
