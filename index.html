@@ -1293,29 +1293,30 @@ function renderTextZone(mainCanvas,display,zone,faceName){
     sctx.putImageData(did,0,0);
   }
 
-  // Cleanup pass — remove isolated non-white pixels (stray pixels with no non-white neighbors)
+  // Cleanup pass — remove stray pixels with fewer than 2 ink neighbors.
+  // Pixels with 0 neighbors are isolated dots; pixels with exactly 1 neighbor
+  // are thin edge artifacts (e.g. stray pixel on corner of 'm' or dot of 'i').
+  // Real letter strokes always have ≥2 ink neighbors, so this is safe.
   const cid=sctx.getImageData(0,0,small.width,small.height);
   const cd=cid.data;
   const SW=small.width,SH=small.height;
-  const isWhite=(i)=>cd[i]===255&&cd[i+1]===255&&cd[i+2]===255;
+  const isInk=(i)=>cd[i+3]>0&&!(cd[i]===255&&cd[i+1]===255&&cd[i+2]===255);
   const kills=[];
   for(let y=0;y<SH;y++){
     for(let x=0;x<SW;x++){
       const i=(y*SW+x)*4;
-      if(isWhite(i)||cd[i+3]===0) continue;
-      // Check 8 neighbors
-      let hasNeighbor=false;
+      if(!isInk(i)) continue;
+      // Count ink neighbors (8-connected)
+      let neighborCount=0;
       for(let dy=-1;dy<=1;dy++){
         for(let dx=-1;dx<=1;dx++){
           if(dx===0&&dy===0) continue;
           const nx=x+dx,ny=y+dy;
           if(nx<0||ny<0||nx>=SW||ny>=SH) continue;
-          const ni=(ny*SW+nx)*4;
-          if(!isWhite(ni)&&cd[ni+3]>0){hasNeighbor=true;break;}
+          if(isInk((ny*SW+nx)*4)) neighborCount++;
         }
-        if(hasNeighbor) break;
       }
-      if(!hasNeighbor) kills.push(i);
+      if(neighborCount<2) kills.push(i);
     }
   }
   for(const i of kills){cd[i]=255;cd[i+1]=255;cd[i+2]=255;cd[i+3]=0;}
